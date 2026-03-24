@@ -4,273 +4,264 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VRS Sailing Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0f1a;
-    --surface: #111827;
-    --surface2: #1a2332;
-    --border: #1e3a4a;
-    --accent: #00ccff;
-    --accent2: #0088bb;
-    --text: #e0eef5;
-    --muted: #7a9ab0;
-    --gold: #f5c842;
-  }
+:root {
+  --bg:#03101f; --bg2:#071829; --bg3:#0a1f33;
+  --surface:#0d2540; --surface2:#112d4a;
+  --border:#1a3a55; --border2:#245070;
+  --teal:#00e5cc; --teal2:#00b8a4; --teal3:#006655;
+  --text:#c8dff0; --text2:#7aadcc; --text3:#3d6e8a;
+  --white:#eaf5ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── HEADER ── */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo svg { width: 28px; height: 28px; flex-shrink: 0; }
+.logo-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.logo-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.tactical-btn {
+  background: var(--teal);
+  color: var(--bg);
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.tactical-btn:hover { background: var(--teal2); }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-  }
+/* ── MAIN ── */
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 36px 24px 60px;
+}
 
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
+/* ── PAGE TITLE ── */
+.page-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 24px;
+}
+.page-title::after {
+  content: '';
+  display: block;
+  height: 1px;
+  background: var(--border);
+  margin-top: 10px;
+}
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--teal2); color: var(--teal2); }
+.filter-btn.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--bg);
+}
 
-  .logo svg { width: 32px; height: 32px; }
+/* ── CLASS SECTION ── */
+.class-section { margin-bottom: 40px; }
 
-  .logo-text {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
+.class-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.class-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+.class-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
 
-  .logo-sub {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    margin-top: 2px;
-  }
+/* ── EVENT GRID ── */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.event-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.event-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--teal3);
+  transition: background 0.15s;
+}
+.event-card:hover {
+  border-color: var(--border2);
+  background: var(--surface2);
+}
+.event-card:hover::before { background: var(--teal); }
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+.event-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.3;
+}
+.event-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.event-meta-item {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.event-races {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.race-pill {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
 
-  .tactical-btn {
-    background: var(--accent);
-    color: #000;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 8px 18px;
-    border-radius: 4px;
-    text-decoration: none;
-    transition: background 0.15s;
-  }
-
-  .tactical-btn:hover { background: var(--accent2); color: #fff; }
-
-  main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 40px 24px;
-  }
-
-  .page-title {
-    font-size: 13px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 32px;
-  }
-
-  /* Filter bar */
-  .filter-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-  }
-
-  .filter-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 6px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .filter-btn:hover,
-  .filter-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #000;
-    font-weight: 700;
-  }
-
-  /* Class sections */
-  .class-section {
-    margin-bottom: 48px;
-  }
-
-  .class-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .class-name {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-
-  .class-count {
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--surface2);
-    padding: 2px 8px;
-    border-radius: 10px;
-  }
-
-  /* Event grid */
-  .event-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-  }
-
-  .event-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    text-decoration: none;
-    color: var(--text);
-    transition: all 0.15s;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .event-card:hover {
-    border-color: var(--accent);
-    background: var(--surface2);
-    transform: translateY(-1px);
-  }
-
-  .event-name {
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .event-meta {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .event-meta-item {
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .event-races {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-  }
-
-  .race-pill {
-    font-size: 10px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 2px 8px;
-    border-radius: 10px;
-  }
-
-  .event-card:hover .race-pill {
-    border-color: var(--accent2);
-  }
-
-  /* Loading / empty states */
-  .state-msg {
-    color: var(--muted);
-    font-size: 13px;
-    padding: 40px 0;
-    text-align: center;
-    letter-spacing: 1px;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-    margin-right: 8px;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  footer {
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    padding: 32px;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
-    letter-spacing: 1px;
-  }
+/* ── STATES ── */
+.state-msg {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text3);
+  font-size: 12px;
+  padding: 40px 0;
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+.spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <!-- Sailboat icon -->
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 4 L16 26" stroke="#00ccff" stroke-width="1.5"/>
-      <path d="M16 5 L4 24 L16 24 Z" fill="#00ccff" opacity="0.7"/>
-      <path d="M16 8 L26 22 L16 22 Z" fill="#00ccff" opacity="0.4"/>
-      <path d="M6 28 L26 28" stroke="#00ccff" stroke-width="1.5" stroke-linecap="round"/>
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 3 L14 24" stroke="#00e5cc" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M14 4 L3 22 L14 22 Z" fill="#00e5cc" opacity="0.65"/>
+      <path d="M14 7 L23 20 L14 20 Z" fill="#00e5cc" opacity="0.35"/>
+      <path d="M5 26 L23 26" stroke="#00e5cc" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
     <div>
       <div class="logo-text">VRS Sailing Tools</div>
       <div class="logo-sub">Vakaros RaceSense Analytics</div>
     </div>
   </div>
-  <div class="header-right">
-    <a href="tactical/tactical.html" class="tactical-btn">⬡ Live Tactical</a>
-  </div>
+  <a href="tactical/tactical.html" class="tactical-btn">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    Live Tactical
+  </a>
 </header>
 
 <main>
@@ -285,26 +276,21 @@
   </div>
 </main>
 
-<footer>VRS Sailing Tools · Powered by Vakaros RaceSense &amp; Firebase</footer>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyC6840waRqWQP8K3nAHVdbL-Lyh_FuAZ6A",
   authDomain: "vrs-sailing-tools.firebaseapp.com",
   projectId: "vrs-sailing-tools",
   storageBucket: "vrs-sailing-tools.firebasestorage.app",
   messagingSenderId: "1075889442099",
   appId: "1:1075889442099:web:37cdef2784422790cb0246"
-};
+});
+const db = getFirestore(app);
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
-// ── Load events from Firestore ──────────────────────────────────────────
 async function loadEvents() {
   const snap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
   const events = [];
@@ -312,7 +298,6 @@ async function loadEvents() {
   return events;
 }
 
-// ── Render ──────────────────────────────────────────────────────────────
 async function render() {
   const dir = document.getElementById('eventDirectory');
   const filterBar = document.getElementById('filterBar');
@@ -322,12 +307,12 @@ async function render() {
   try {
     events = await loadEvents();
   } catch(e) {
-    dir.innerHTML = `<div class="state-msg">Unable to load events. Check Firestore rules.</div>`;
+    dir.innerHTML = `<div class="state-msg">Unable to load events — check Firestore rules.</div>`;
     return;
   }
 
   if (!events.length) {
-    dir.innerHTML = `<div class="state-msg">No events yet. Add your first event to Firestore.</div>`;
+    dir.innerHTML = `<div class="state-msg">No events yet.</div>`;
     return;
   }
 
@@ -337,7 +322,7 @@ async function render() {
     const btn = document.createElement('button');
     btn.className = 'filter-btn';
     btn.dataset.class = cls;
-    btn.textContent = cls;
+    btn.textContent = cls.toUpperCase();
     filterBar.appendChild(btn);
   }
 
@@ -355,10 +340,7 @@ async function render() {
 
 function renderDirectory(events, activeClass) {
   const dir = document.getElementById('eventDirectory');
-
-  const filtered = activeClass === 'all'
-    ? events
-    : events.filter(e => e.class === activeClass);
+  const filtered = activeClass === 'all' ? events : events.filter(e => e.class === activeClass);
 
   if (!filtered.length) {
     dir.innerHTML = `<div class="state-msg">No events for this class yet.</div>`;
@@ -379,23 +361,26 @@ function renderDirectory(events, activeClass) {
         <span class="class-name">${cls}</span>
         <span class="class-count">${evs.length} event${evs.length !== 1 ? 's' : ''}</span>
       </div>
-      <div class="event-grid">
-        ${evs.map(ev => eventCard(ev)).join('')}
-      </div>
+      <div class="event-grid">${evs.map(ev => eventCard(ev)).join('')}</div>
     </div>
   `).join('');
 }
 
 function eventCard(ev) {
   const racesHtml = (ev.races ?? []).map((r, i) =>
-    `<span class="race-pill">R${i+1}${r.label ? ' · '+r.label : ''}</span>`
+    `<span class="race-pill">R${i+1}${r.label ? ' · ' + r.label : ''}</span>`
   ).join('');
 
   const dateStr = ev.date
-    ? new Date(ev.date.seconds ? ev.date.seconds * 1000 : ev.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
+    ? (() => {
+        try {
+          const d = ev.date.seconds ? new Date(ev.date.seconds * 1000) : new Date(ev.date);
+          return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+        } catch(e) { return ev.date; }
+      })()
     : '';
 
-  const href = ev.report_url ?? `events/${(ev.class??'').toLowerCase()}/${ev.file ?? '#'}`;
+  const href = ev.report_url ?? `events/${(ev.class ?? '').toLowerCase()}/${ev.file ?? '#'}`;
 
   return `
     <a class="event-card" href="${href}">
