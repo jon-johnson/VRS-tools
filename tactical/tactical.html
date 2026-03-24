@@ -596,28 +596,21 @@ const STATE = {
 // ═══════════════════════════════════════════════════════════
 //  FIREBASE — load available classes / polars
 // ═══════════════════════════════════════════════════════════
+// Known classes — add new entries here as polars are added to /polars/
+const KNOWN_CLASSES = [
+  { id: 'cape31', name: 'Cape 31' },
+  { id: 'dragon', name: 'Dragon' },
+];
+
 async function loadClasses() {
-  try {
-    const res = await fetch(`${FB_BASE}/polars`);
-    const data = await res.json();
-    const sel = document.getElementById('cfg-class');
-    sel.innerHTML = '<option value="">Select class…</option>';
-    if (data.documents) {
-      for (const doc of data.documents) {
-        const id = doc.name.split('/').pop();
-        const name = doc.fields?.name?.stringValue ?? id;
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = name;
-        sel.appendChild(opt);
-      }
-    } else {
-      // Fallback: hardcoded classes
-      sel.innerHTML = '<option value="">Select class…</option><option value="cape31">Cape 31</option><option value="dragon">Dragon</option>';
-    }
-  } catch(e) {
-    const sel = document.getElementById('cfg-class');
-    sel.innerHTML = '<option value="">Select class…</option><option value="cape31">Cape 31</option><option value="dragon">Dragon</option>';
+  const sel = document.getElementById('cfg-class');
+  // Always populate immediately from known classes — no network dependency
+  sel.innerHTML = '<option value="">Select class…</option>';
+  for (const cls of KNOWN_CLASSES) {
+    const opt = document.createElement('option');
+    opt.value = cls.id;
+    opt.textContent = cls.name;
+    sel.appendChild(opt);
   }
 }
 
@@ -628,19 +621,11 @@ async function onClassChange() {
   statusEl.style.display = 'block';
   statusEl.textContent = 'Loading polar…';
   try {
-    // Try Firestore first, fall back to /polars/ JSON file
+    // Load polar from local JSON file (always available via GitHub Pages)
     let polar = null;
-    try {
-      const res = await fetch(`${FB_BASE}/polars/${classId}`);
-      const doc = await res.json();
-      if (doc.fields) {
-        polar = firestoreToObj(doc.fields);
-      }
-    } catch(e) {}
-    if (!polar) {
-      const res = await fetch(`../polars/${classId}.json`);
-      polar = await res.json();
-    }
+    const res = await fetch(`../polars/${classId}.json`);
+    if (res.ok) polar = await res.json();
+    if (!polar) throw new Error('Polar file not found');
     STATE.polar = polar;
     STATE.className = polar.name ?? classId;
     document.getElementById('cfg-division').value = polar.division ?? polar.name ?? classId;
