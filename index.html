@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VRS Sailing Tools</title>
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2332;
+    --border: #1e3a4a;
+    --accent: #00ccff;
+    --accent2: #0088bb;
+    --text: #e0eef5;
+    --muted: #7a9ab0;
+    --gold: #f5c842;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo svg { width: 32px; height: 32px; }
+
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tactical-btn {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+
+  .tactical-btn:hover { background: var(--accent2); color: #fff; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  .page-title {
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover,
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+
+  /* Class sections */
+  .class-section {
+    margin-bottom: 48px;
+  }
+
+  .class-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .class-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .class-count {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Event grid */
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .event-card:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateY(-1px);
+  }
+
+  .event-name {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .event-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .event-meta-item {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .event-races {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .race-pill {
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .event-card:hover .race-pill {
+    border-color: var(--accent2);
+  }
+
+  /* Loading / empty states */
+  .state-msg {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 40px 0;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 32px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <!-- Sailboat icon -->
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 4 L16 26" stroke="#00ccff" stroke-width="1.5"/>
+      <path d="M16 5 L4 24 L16 24 Z" fill="#00ccff" opacity="0.7"/>
+      <path d="M16 8 L26 22 L16 22 Z" fill="#00ccff" opacity="0.4"/>
+      <path d="M6 28 L26 28" stroke="#00ccff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="logo-text">VRS Sailing Tools</div>
+      <div class="logo-sub">Vakaros RaceSense Analytics</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="tactical/tactical.html" class="tactical-btn">⬡ Live Tactical</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-title">Event Directory</div>
+
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-class="all">All Classes</button>
+  </div>
+
+  <div id="eventDirectory">
+    <div class="state-msg"><span class="spinner"></span>Loading events…</div>
+  </div>
+</main>
+
+<footer>VRS Sailing Tools · Powered by Vakaros RaceSense &amp; Firebase</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC6840waRqWQP8K3nAHVdbL-Lyh_FuAZ6A",
+  authDomain: "vrs-sailing-tools.firebaseapp.com",
+  projectId: "vrs-sailing-tools",
+  storageBucket: "vrs-sailing-tools.firebasestorage.app",
+  messagingSenderId: "1075889442099",
+  appId: "1:1075889442099:web:37cdef2784422790cb0246"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Load events from Firestore ──────────────────────────────────────────
+async function loadEvents() {
+  const snap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
+  const events = [];
+  snap.forEach(doc => events.push({ id: doc.id, ...doc.data() }));
+  return events;
+}
+
+// ── Render ──────────────────────────────────────────────────────────────
+async function render() {
+  const dir = document.getElementById('eventDirectory');
+  const filterBar = document.getElementById('filterBar');
+  let activeClass = 'all';
+
+  let events;
+  try {
+    events = await loadEvents();
+  } catch(e) {
+    dir.innerHTML = `<div class="state-msg">Unable to load events. Check Firestore rules.</div>`;
+    return;
+  }
+
+  if (!events.length) {
+    dir.innerHTML = `<div class="state-msg">No events yet. Add your first event to Firestore.</div>`;
+    return;
+  }
+
+  // Build class filter buttons
+  const classes = [...new Set(events.map(e => e.class).filter(Boolean))].sort();
+  for (const cls of classes) {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.class = cls;
+    btn.textContent = cls;
+    filterBar.appendChild(btn);
+  }
+
+  filterBar.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    activeClass = btn.dataset.class;
+    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDirectory(events, activeClass);
+  });
+
+  renderDirectory(events, activeClass);
+}
+
+function renderDirectory(events, activeClass) {
+  const dir = document.getElementById('eventDirectory');
+
+  const filtered = activeClass === 'all'
+    ? events
+    : events.filter(e => e.class === activeClass);
+
+  if (!filtered.length) {
+    dir.innerHTML = `<div class="state-msg">No events for this class yet.</div>`;
+    return;
+  }
+
+  // Group by class
+  const byClass = {};
+  for (const ev of filtered) {
+    const cls = ev.class ?? 'Unknown';
+    if (!byClass[cls]) byClass[cls] = [];
+    byClass[cls].push(ev);
+  }
+
+  dir.innerHTML = Object.entries(byClass).map(([cls, evs]) => `
+    <div class="class-section">
+      <div class="class-header">
+        <span class="class-name">${cls}</span>
+        <span class="class-count">${evs.length} event${evs.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="event-grid">
+        ${evs.map(ev => eventCard(ev)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function eventCard(ev) {
+  const racesHtml = (ev.races ?? []).map((r, i) =>
+    `<span class="race-pill">R${i+1}${r.label ? ' · '+r.label : ''}</span>`
+  ).join('');
+
+  const dateStr = ev.date
+    ? new Date(ev.date.seconds ? ev.date.seconds * 1000 : ev.date).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })
+    : '';
+
+  const href = ev.report_url ?? `events/${(ev.class??'').toLowerCase()}/${ev.file ?? '#'}`;
+
+  return `
+    <a class="event-card" href="${href}">
+      <div class="event-name">${ev.name ?? 'Unnamed Event'}</div>
+      <div class="event-meta">
+        ${dateStr ? `<span class="event-meta-item">📅 ${dateStr}</span>` : ''}
+        ${ev.venue ? `<span class="event-meta-item">📍 ${ev.venue}</span>` : ''}
+        ${ev.races?.length ? `<span class="event-meta-item">🏁 ${ev.races.length} races</span>` : ''}
+      </div>
+      ${racesHtml ? `<div class="event-races">${racesHtml}</div>` : ''}
+    </a>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
