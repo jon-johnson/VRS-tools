@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#03101f">
+<title>VRS Tactical</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#03101f; --bg2:#071829; --bg3:#0a1f33;
+  --surface:#0d2540; --surface2:#112d4a;
+  --border:#1a3a55; --border2:#245070;
+  --teal:#00e5cc; --teal2:#00b8a4; --teal3:#006655;
+  --amber:#ffb700; --amber2:#e67e00;
+  --red:#ff4455; --red2:#cc2233;
+  --green:#00e67a; --green2:#00994d;
+  --text:#c8dff0; --text2:#7aadcc; --text3:#3d6e8a;
+  --white:#eaf5ff;
+  --nav-h:60px; --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+
+/* NAV */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:100;height:calc(var(--nav-h) + var(--safe-bot));background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:4px;backdrop-filter:blur(12px)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 4px;cursor:pointer;border:none;background:none;color:var(--text3);transition:color 0.2s;font-family:'Orbitron',monospace;font-size:9px;font-weight:600;letter-spacing:.08em}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;transition:stroke 0.2s}
+.nav-btn.active{color:var(--teal)}
+.nav-btn.active svg{stroke:var(--teal);filter:drop-shadow(0 0 6px var(--teal))}
+.nav-btn:active{transform:scale(0.92)}
+
+/* PAGES */
+.page{position:fixed;top:0;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-bot));overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;background:var(--bg);-webkit-overflow-scrolling:touch}
+.page.active{display:flex}
+#page-map{overflow:hidden}
+
+/* PAGE HEADER */
+.page-header{padding:14px 16px 10px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.page-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--teal);letter-spacing:.12em}
+.page-subtitle{font-size:11px;color:var(--text3);letter-spacing:.05em;margin-left:auto}
+
+/* STATUS BAR */
+#status-bar{display:flex;align-items:center;gap:8px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;flex-shrink:0}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.status-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 1.4s ease-in-out infinite}
+.status-dot.stale{background:var(--amber)}
+.status-dot.error{background:var(--red)}
+#status-text{color:var(--text2);flex:1}
+#last-update{color:var(--text3);margin-left:auto}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* FORMS */
+.section{padding:16px;border-bottom:1px solid var(--border)}
+.section-label{font-family:'Orbitron',monospace;font-size:10px;font-weight:600;color:var(--teal2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-row{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.form-group{flex:1;display:flex;flex-direction:column;gap:5px}
+.form-group.sm{flex:0 0 80px}
+label{font-size:10px;color:var(--text3);letter-spacing:.05em;font-weight:500}
+input[type=text],input[type=number],select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:13px;padding:9px 11px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,229,204,.12)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233d6e8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+input[type=range]{width:100%;accent-color:var(--teal);height:4px;margin:6px 0}
+.btn{border:none;border-radius:7px;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;padding:11px 16px;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-primary{background:var(--teal);color:var(--bg)}
+.btn-primary:active{background:var(--teal2);transform:scale(.96)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:active{background:var(--border);transform:scale(.96)}
+.btn-amber{background:rgba(255,183,0,.12);color:var(--amber);border:1px solid rgba(255,183,0,.3)}
+.btn-amber:active{transform:scale(.96)}
+.btn-full{width:100%}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+
+/* MAP */
+#map-canvas{position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none}
+#map-overlay{position:absolute;top:0;left:0;right:0;pointer-events:none}
+.map-header{display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(3,16,31,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);pointer-events:all}
+.map-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.1em}
+.map-orient-toggle{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:'Orbitron',monospace;font-size:9px;color:var(--text2);cursor:pointer;font-weight:600;letter-spacing:.05em}
+.map-side-btns{position:absolute;left:10px;top:80px;display:flex;flex-direction:column;gap:8px;pointer-events:all;z-index:10}
+.map-side-btn{width:40px;height:40px;background:rgba(3,16,31,.9);border:1px solid var(--border);backdrop-filter:blur(8px);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;color:var(--text2)}
+.map-side-btn:active{background:var(--surface2);transform:scale(.93)}
+.map-side-btn.active-mode{border-color:var(--teal);color:var(--teal)}
+#map-wind-badge{position:absolute;top:70px;right:12px;pointer-events:all;cursor:pointer;background:rgba(3,16,31,.85);border:1px solid var(--border);backdrop-filter:blur(6px);border-radius:8px;padding:8px 10px;text-align:center;transition:border-color .18s}
+#map-wind-badge:active{border-color:var(--teal2)}
+.wind-badge-dir{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--white)}
+.wind-badge-tws{font-size:9px;color:var(--text3);margin-top:2px}
+.wind-badge-hint{font-size:8px;color:var(--teal3);margin-top:2px;letter-spacing:.05em}
+
+/* WIND EDIT POPUP */
+#wind-edit-popup{display:none;position:absolute;top:70px;right:70px;background:var(--surface);border:1px solid var(--border2);backdrop-filter:blur(12px);border-radius:10px;padding:12px 14px;pointer-events:all;z-index:20;width:200px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+#wind-edit-popup.visible{display:block;animation:fadeIn .15s}
+.wep-label{font-size:9px;color:var(--teal2);font-family:'Orbitron',monospace;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.wep-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.wep-row label{font-size:10px;color:var(--text3);min-width:30px}
+.wep-row input[type=number]{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:14px;padding:5px 8px;outline:none;-webkit-appearance:none;appearance:none}
+.wep-row input[type=number]:focus{border-color:var(--teal)}
+.wep-row input[type=range]{flex:1;accent-color:var(--teal)}
+.wep-apply{width:100%;margin-top:4px;padding:8px;border:none;border-radius:6px;background:var(--teal);color:var(--bg);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer}
+.wep-apply:active{background:var(--teal2);transform:scale(.97)}
+
+/* MARK ROLE PICKER */
+#mark-role-picker{display:none;position:absolute;z-index:25;pointer-events:all;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);min-width:160px}
+#mark-role-picker.visible{display:block;animation:fadeIn2 .15s}
+.mrp-title{font-family:'Orbitron',monospace;font-size:9px;color:var(--teal2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;text-align:center}
+.mrp-sn{font-size:10px;color:var(--text3);text-align:center;margin-bottom:8px;font-family:'Share Tech Mono',monospace}
+.mrp-btn{display:block;width:100%;padding:7px 10px;margin-bottom:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:'Share Tech Mono',monospace;font-size:12px;text-align:left;cursor:pointer;transition:all .15s}
+.mrp-btn:active{transform:scale(.97)}
+.mrp-btn.active{border-color:var(--teal);color:var(--teal);background:rgba(0,229,204,.08)}
+.mrp-btn.role-ww{border-left:3px solid #00e5cc}
+.mrp-btn.role-lw{border-left:3px solid #00b8a4}
+.mrp-btn.role-line{border-left:3px solid #ffb700}
+.mrp-btn.role-ignore{border-left:3px solid #1a3a55}
+.mrp-cancel{width:100%;padding:6px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;cursor:pointer;margin-top:2px}
+.mrp-cancel:active{background:var(--surface2)}
+
+/* DATA PAGE */
+#page-data{padding:12px;gap:10px}
+.priority-cards{display:flex;flex-direction:column;gap:8px}
+.priority-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;flex-shrink:0}
+.priority-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal)}
+.priority-card.bias-rc::before{background:var(--amber)}
+.priority-card.bias-pin::before{background:var(--teal)}
+.priority-card.balanced::before{background:var(--green)}
+.pc-label{font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin-bottom:4px}
+.pc-value{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--white);line-height:1}
+.pc-value.amber{color:var(--amber)}
+.pc-value.teal{color:var(--teal)}
+.pc-value.green{color:var(--green)}
+.pc-value.red{color:var(--red)}
+.pc-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.pc-badge{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(0,229,204,.12);border:1px solid rgba(0,229,204,.25);border-radius:20px;padding:4px 10px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:var(--teal);letter-spacing:.08em}
+.pc-badge.amber{background:rgba(255,183,0,.12);border-color:rgba(255,183,0,.25);color:var(--amber)}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.data-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.dc-label{font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.dc-value{font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--white)}
+.dc-value.teal{color:var(--teal)}
+.dc-value.amber{color:var(--amber)}
+.dc-value.green{color:var(--green)}
+.dc-sub{font-size:9px;color:var(--text3);margin-top:2px}
+
+/* WIND PAGE */
+#page-wind{padding:14px;gap:12px}
+.wind-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.wind-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+.wind-row:last-child{border-bottom:none}
+.wr-label{font-size:11px;color:var(--text2)}
+.wr-value{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--white)}
+.wr-value.teal{color:var(--teal)}
+.wr-value.amber{color:var(--amber)}
+.confidence-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.confidence-fill{height:100%;border-radius:3px;transition:width .5s;background:linear-gradient(90deg,var(--teal3),var(--teal))}
+#wind-rose-wrap{display:flex;justify-content:center}
+.cluster-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.cluster-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.cluster-card .cl-label{font-size:9px;color:var(--text3);letter-spacing:.05em;margin-bottom:4px}
+.cluster-card .cl-val{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--white)}
+.cluster-card .cl-n{font-size:9px;color:var(--text3);margin-top:2px}
+.cluster-card.port{border-color:rgba(255,68,85,.35)}
+.cluster-card.stbd{border-color:rgba(0,230,122,.35)}
+.cluster-card.port .cl-val{color:var(--red)}
+.cluster-card.stbd .cl-val{color:var(--green)}
+
+/* TOAST */
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:12px;color:var(--text);z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;max-width:calc(100vw - 40px);text-align:center}
+#toast.show{opacity:1}
+#toast.ok{border-color:var(--teal);color:var(--teal)}
+#toast.err{border-color:var(--red);color:var(--red)}
+
+/* SCAN OVERLAY */
+#scan-overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(3,16,31,.96);backdrop-filter:blur(16px);flex-direction:column;align-items:center;justify-content:center;gap:18px}
+
+/* MARK ASSIGN BANNER */
+#mark-assign-banner{display:none;position:fixed;bottom:calc(var(--nav-h) + var(--safe-bot) + 10px);left:12px;right:12px;z-index:50;background:rgba(7,24,41,.97);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;backdrop-filter:blur(12px)}
+.mab-chip{font-size:9px;font-family:'Orbitron',monospace;letter-spacing:.06em;padding:3px 8px;border-radius:10px;border:1px solid var(--border);color:var(--text3);background:var(--bg3);white-space:nowrap}
+.mab-chip.set-ww{color:#00e5cc;border-color:rgba(0,229,204,.35);background:rgba(0,229,204,.08)}
+.mab-chip.set-lw{color:#00b8a4;border-color:rgba(0,184,164,.35);background:rgba(0,184,164,.08)}
+.mab-chip.set-line{color:var(--amber);border-color:rgba(255,183,0,.35);background:rgba(255,183,0,.08)}
+
+/* CLASS BADGE */
+.class-badge{background:rgba(0,229,204,.1);border:1px solid rgba(0,229,204,.25);border-radius:5px;padding:3px 10px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--teal);letter-spacing:.1em;margin-left:auto}
+
+@keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeIn2{from{opacity:0}to{opacity:1}}
+.section:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- SCAN OVERLAY -->
+<div id="scan-overlay" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(3,16,31,.96);backdrop-filter:blur(16px);flex-direction:column;align-items:center;justify-content:center;gap:18px">
+  <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.18em">Scanning Marks</div>
+  <div style="width:240px;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+    <div id="scan-fill" style="height:100%;width:0%;background:var(--teal);border-radius:2px;transition:width .3s"></div>
+  </div>
+  <div id="scan-progress-txt" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text2);text-align:center;max-width:280px;line-height:1.5"></div>
+</div>
+
+<!-- MARK ASSIGN BANNER -->
+<div id="mark-assign-banner">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="flex:1">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--teal2);letter-spacing:.12em;margin-bottom:3px" id="mab-instruction">TAP A MARK TO ASSIGN ITS ROLE</div>
+      <div id="mab-chips" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px"></div>
+    </div>
+    <button onclick="confirmMarkAssignments()" style="flex-shrink:0;background:var(--teal);color:var(--bg);border:none;border-radius:7px;padding:9px 16px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer">CONFIRM</button>
+  </div>
+</div>
+
+<!-- ══════ PAGE: CONFIG ══════ -->
+<div class="page active" id="page-config">
+  <div class="page-header">
+    <div class="page-title">VRS TACTICAL</div>
+    <div id="config-status-dot" class="status-dot" style="margin-left:auto"></div>
+    <div id="config-status-txt" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace">NOT CONNECTED</div>
+  </div>
+
+  <!-- CLASS SELECTOR -->
+  <div class="section">
+    <div class="section-label">Class &amp; Polar</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Boat Class</label>
+        <select id="cfg-class" onchange="onClassChange()">
+          <option value="">Loading classes…</option>
+        </select>
+      </div>
+    </div>
+    <div id="polar-status" style="font-size:10px;color:var(--text3);padding:6px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);font-family:'Share Tech Mono',monospace;display:none"></div>
+  </div>
+
+  <!-- TELEMETRY SOURCE -->
+  <div class="section">
+    <div class="section-label">Telemetry Source</div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>RaceSense Event URL or Event ID</label>
+      <input type="text" id="cfg-event-input" placeholder="paste URL or event ID" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="form-row">
+      <div class="form-group sm">
+        <label>Division</label>
+        <input type="text" id="cfg-division" value="">
+      </div>
+      <div class="form-group sm">
+        <label>Poll (sec)</label>
+        <select id="cfg-poll">
+          <option value="10">10s</option>
+          <option value="30" selected>30s</option>
+          <option value="60">60s</option>
+        </select>
+      </div>
+      <div class="form-group" style="justify-content:flex-end;padding-top:18px">
+        <button class="btn btn-primary" id="connect-btn" onclick="startPolling()">CONNECT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARK SERIAL NUMBERS -->
+  <div class="section">
+    <div class="section-label">Mark Serial Numbers</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div class="form-group">
+        <label>RC Boat SN</label>
+        <input type="text" id="cfg-rc-sn" placeholder="e.g. 14292" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>PIN SN</label>
+        <input type="text" id="cfg-pin-sn" placeholder="e.g. 14293" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>WW Mark SN</label>
+        <input type="text" id="cfg-ww-sn" placeholder="e.g. 13498" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>WW Offset SN</label>
+        <input type="text" id="cfg-offset-sn" placeholder="optional" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>LW Port SN</label>
+        <input type="text" id="cfg-lw-port-sn" placeholder="e.g. 15255" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label>LW Stbd SN</label>
+        <input type="text" id="cfg-lw-stbd-sn" placeholder="e.g. 15256" inputmode="numeric">
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);line-height:1.5">
+      SNs pre-assign mark roles. You can also tap marks on the map to assign them manually.
+    </div>
+  </div>
+
+  <!-- WIND -->
+  <div class="section">
+    <div class="section-label">Wind</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Wind Direction (°True, from)</label>
+        <input type="number" id="cfg-wind-dir" value="0" min="0" max="359">
+      </div>
+      <div class="form-group sm">
+        <label>TWS (kts)</label>
+        <input type="number" id="cfg-tws" value="12" min="1" max="40">
+      </div>
+    </div>
+  </div>
+
+  <!-- EXCLUDED BOATS -->
+  <div class="section">
+    <div class="section-label">Excluded Sail Numbers</div>
+    <div class="form-group">
+      <label>Comma-separated (e.g. 98,99,01)</label>
+      <input type="text" id="cfg-excluded" placeholder="98,99" inputmode="text">
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="btn btn-secondary btn-full" onclick="resetAll()">RESET ALL</button>
+  </div>
+</div>
+
+<!-- ══════ PAGE: MAP ══════ -->
+<div class="page" id="page-map">
+  <canvas id="map-canvas"></canvas>
+  <div id="map-overlay">
+    <div class="map-header">
+      <div class="map-title">COURSE MAP</div>
+      <div id="map-class-badge" class="class-badge" style="display:none"></div>
+      <button class="map-orient-toggle" onclick="toggleOrientation()" id="orient-btn">N↑</button>
+    </div>
+    <div id="map-wind-badge" onclick="toggleWindPopup()">
+      <div class="wind-badge-dir" id="mbadge-dir">–––</div>
+      <div class="wind-badge-tws" id="mbadge-tws">– kt</div>
+      <div class="wind-badge-hint">TAP TO EDIT</div>
+    </div>
+    <div id="wind-edit-popup">
+      <div class="wep-label">Wind Override</div>
+      <div class="wep-row"><label>Dir</label><input type="number" id="wep-dir" min="0" max="359" placeholder="°"></div>
+      <div class="wep-row"><label>TWS</label><input type="range" id="wep-tws" min="2" max="35" step="1" value="12" oninput="document.getElementById('wep-tws-val').textContent=this.value+'kt'"><span id="wep-tws-val" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--white);min-width:30px">12kt</span></div>
+      <button class="wep-apply" onclick="applyWindPopup()">APPLY</button>
+    </div>
+    <div class="map-side-btns">
+      <div class="map-side-btn" id="assign-marks-btn" onclick="enterMarkAssignMode()" title="Assign marks">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M12 2v3M12 11v2M8 8H5M16 8h3"/><rect x="7" y="15" width="10" height="7" rx="1"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      </div>
+      <div class="map-side-btn" id="gps-ping-btn" onclick="pingGPS()" title="GPS → my position">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 2.5"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+      </div>
+      <div class="map-side-btn" onclick="resetMapZoom()" title="Reset zoom" id="zoom-reset-btn" style="display:none">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><line x1="20" y1="20" x2="15.5" y2="15.5"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </div>
+    </div>
+    <!-- Mark role picker -->
+    <div id="mark-role-picker">
+      <div class="mrp-title">Assign Mark</div>
+      <div class="mrp-sn" id="mrp-sn-label">SN ––</div>
+      <button class="mrp-btn role-ww" onclick="assignMarkRole('WW')">Windward Mark</button>
+      <button class="mrp-btn role-ww" onclick="assignMarkRole('WW-OFFSET')">WW Offset</button>
+      <button class="mrp-btn role-lw" onclick="assignMarkRole('LW-PORT')">LW Gate Port</button>
+      <button class="mrp-btn role-lw" onclick="assignMarkRole('LW-STBD')">LW Gate Stbd</button>
+      <button class="mrp-btn role-line" onclick="assignMarkRole('RC')">RC Boat</button>
+      <button class="mrp-btn role-line" onclick="assignMarkRole('PIN')">Pin End</button>
+      <button class="mrp-btn role-ignore" onclick="assignMarkRole('IGNORE')">Ignore</button>
+      <button class="mrp-cancel" onclick="closeMarkRolePicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE: DATA ══════ -->
+<div class="page" id="page-data">
+  <div style="flex-shrink:0">
+    <div id="status-bar">
+      <div class="status-dot" id="data-dot"></div>
+      <div id="status-text">Not connected</div>
+      <div id="last-update">––</div>
+    </div>
+  </div>
+
+  <div class="priority-cards" id="priority-cards" style="flex-shrink:0;padding:0 12px 0">
+
+    <!-- Start Line Bias -->
+    <div class="priority-card" id="pc-line-bias">
+      <div class="pc-label">Start Line Bias</div>
+      <canvas id="start-line-canvas" height="44" style="width:100%;display:block;margin-top:4px"></canvas>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:3px">
+          <span style="font-size:9px;color:var(--text3)">PIN</span>
+          <span id="pc-pin-excess" style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--red)">––</span>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">FAVOURED</div>
+          <div class="pc-value teal" id="pc-bias-favoured" style="font-size:20px">––</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px">
+          <span id="pc-rc-excess" style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--red)">––</span>
+          <span style="font-size:9px;color:var(--text3)">RC</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LW Gate Bias -->
+    <div class="priority-card" id="pc-lw-gate">
+      <div class="pc-label">LW Gate Bias</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <div style="flex:1">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">GATE AXIS</div>
+          <div class="pc-value teal" id="pc-lw-perp" style="font-size:26px">––°</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:1px">axis <span id="pc-lw-axis" style="color:var(--text2);font-size:11px">––°</span></div>
+        </div>
+        <div style="width:1px;height:50px;background:var(--border)"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">FAVOURED</div>
+          <div class="pc-value" id="pc-lw-favoured" style="font-size:22px">––</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px" id="pc-lw-sub">–</div>
+        </div>
+        <div style="width:1px;height:50px;background:var(--border)"></div>
+        <div style="flex:1;text-align:right">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">LINE LEN</div>
+          <div class="pc-value" id="pc-line-len" style="font-size:18px;color:var(--text2)">––</div>
+          <div style="font-size:9px;color:var(--text3)">metres</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Axis & Wind -->
+    <div class="priority-card" id="pc-course">
+      <div class="pc-label">Course &amp; Wind</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <div style="flex:1">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">COURSE AXIS</div>
+          <div class="pc-value teal" id="pc-course-axis" style="font-size:26px">––°</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:1px" id="pc-course-axis-card">LW → WW</div>
+        </div>
+        <div style="width:1px;height:50px;background:var(--border)"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">WIND</div>
+          <div class="pc-value" id="pc-course-wind" style="font-size:26px">––°</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:1px" id="pc-course-wind-sub">––</div>
+        </div>
+        <div style="width:1px;height:50px;background:var(--border)"></div>
+        <div style="flex:1;text-align:right">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:.06em">WIND ANGLE</div>
+          <div class="pc-value" id="pc-wind-angle" style="font-size:22px;color:var(--text2)">––°</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:1px">off course</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Small data grid -->
+  <div class="data-grid" style="padding:0 12px;flex-shrink:0">
+    <div class="data-card">
+      <div class="dc-label">Wind (Inferred)</div>
+      <div class="dc-value teal" id="dc-wind-inf">––</div>
+      <div class="dc-sub" id="dc-wind-inf-conf">no fleet data</div>
+    </div>
+    <div class="data-card">
+      <div class="dc-label">Wind (User)</div>
+      <div class="dc-value" id="dc-wind-user">––</div>
+      <div class="dc-sub" id="dc-wind-user-tws">––</div>
+    </div>
+    <div class="data-card">
+      <div class="dc-label">WW Mark Dist</div>
+      <div class="dc-value" id="dc-ww-dist">––</div>
+      <div class="dc-sub">pin → WW</div>
+    </div>
+    <div class="data-card">
+      <div class="dc-label">Class / Polar</div>
+      <div class="dc-value teal" id="dc-class-name">––</div>
+      <div class="dc-sub" id="dc-tack-angle">tack angle: ––°</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE: WIND ══════ -->
+<div class="page" id="page-wind">
+  <div class="page-header">
+    <div class="page-title">WIND</div>
+    <div class="page-subtitle" id="wind-page-subtitle">––</div>
+  </div>
+
+  <!-- Manual wind edit -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:0 0 0 0;flex-shrink:0;cursor:pointer;transition:border-color .18s" onclick="toggleWindInlineEdit()" id="wind-edit-strip">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:var(--teal2);letter-spacing:.1em">USER WIND</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--white)" id="wes-value">–––° / –– kt</div>
+    </div>
+    <div style="font-size:9px;color:var(--text3);margin-top:3px">Tap to edit</div>
+    <div id="wind-inline-edit" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label style="font-size:10px;color:var(--text3);min-width:32px">Dir</label>
+        <input type="number" id="wie-dir" min="0" max="359" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:14px;padding:5px 8px;outline:none;-webkit-appearance:none;appearance:none">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label style="font-size:10px;color:var(--text3);min-width:32px">TWS</label>
+        <input type="range" id="wie-tws" min="2" max="35" step="1" value="12" style="flex:1;accent-color:var(--teal)" oninput="document.getElementById('wie-tws-val').textContent=this.value+'kt'">
+        <span id="wie-tws-val" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--white);min-width:30px">12kt</span>
+      </div>
+      <button onclick="applyWindInline()" style="width:100%;padding:8px;border:none;border-radius:6px;background:var(--teal);color:var(--bg);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer">APPLY</button>
+    </div>
+  </div>
+
+  <!-- Wind rose -->
+  <div id="wind-rose-wrap"><canvas id="wind-rose" width="240" height="240"></canvas></div>
+
+  <!-- Inferred wind details -->
+  <div class="wind-section">
+    <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--teal2);letter-spacing:.12em;margin-bottom:10px">INFERRED WIND</div>
+    <div class="wind-row"><span class="wr-label">Direction</span><span class="wr-value teal" id="wf-inf-dir">––</span></div>
+    <div class="wind-row"><span class="wr-label">Upwind estimate</span><span class="wr-value" id="wf-up">––</span></div>
+    <div class="wind-row"><span class="wr-label">Downwind estimate</span><span class="wr-value" id="wf-dw">––</span></div>
+    <div class="wind-row"><span class="wr-label">Agreement</span><span class="wr-value" id="wf-agreement">––</span></div>
+    <div class="wind-row"><span class="wr-label">Tack angle (polar)</span><span class="wr-value" id="wf-tack-angle">––</span></div>
+    <div class="wind-row" style="border-bottom:none"><span class="wr-label">Samples</span><span class="wr-value" id="wf-samples">––</span></div>
+    <div class="confidence-bar"><div class="confidence-fill" id="conf-fill" style="width:0%"></div></div>
+    <div style="font-size:9px;color:var(--text3);margin-top:4px;text-align:right" id="wf-conf-pct">conf: –%</div>
+  </div>
+
+  <!-- Port / Stbd clusters -->
+  <div class="cluster-grid">
+    <div class="cluster-card port">
+      <div class="cl-label">PORT TACK</div>
+      <div class="cl-val" id="cl-port">––°</div>
+      <div class="cl-n" id="cl-port-n">– samples</div>
+    </div>
+    <div class="cluster-card stbd">
+      <div class="cl-label">STBD TACK</div>
+      <div class="cl-val" id="cl-stbd">––°</div>
+      <div class="cl-n" id="cl-stbd-n">– samples</div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="nav">
+  <button class="nav-btn active" id="nav-config" onclick="showPage('config')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    CONFIG
+  </button>
+  <button class="nav-btn" id="nav-map" onclick="showPage('map')">
+    <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    MAP
+  </button>
+  <button class="nav-btn" id="nav-data" onclick="showPage('data')">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    DATA
+  </button>
+  <button class="nav-btn" id="nav-wind" onclick="showPage('wind')">
+    <svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+    WIND
+  </button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═══════════════════════════════════════════════════════════
+const D2R = Math.PI / 180;
+const R2D = 180 / Math.PI;
+const TELE_BASE = 'https://teleapi.regatta.app/telemetry/event';
+const FB_BASE = 'https://firestore.googleapis.com/v1/projects/vrs-sailing-tools/databases/(default)/documents';
+
+const STATE = {
+  eventId: null,
+  division: '',
+  polar: null,
+  className: '',
+  pollInterval: null,
+  lastFetch: 0,
+  tracks: {},        // sail -> [{ts,lat,lon,sog,cog}]
+  rawMarks: {},      // sn -> [{lat,lon,ts}]
+  markRoles: {},     // sn -> 'RC'|'PIN'|'WW'|'WW-OFFSET'|'LW-PORT'|'LW-STBD'|'IGNORE'
+  marks: { RC: null, PIN: null, WW: null, WW_OFFSET: null, LW_PORT: null, LW_STBD: null },
+  windUser: 0,
+  windTWS: 12,
+  windInferred: null,
+  windBlended: null,
+  gunTs: null,
+  excludedSails: new Set(),
+  assignMode: false,
+  pendingRoleSN: null,
+  mapScale: 1, mapOffX: 0, mapOffY: 0,
+  mapNorthUp: false,
+  mapDragging: false, mapLastX: 0, mapLastY: 0,
+  gpsPos: null,
+  connected: false,
+};
+
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE — load available classes / polars
+// ═══════════════════════════════════════════════════════════
+async function loadClasses() {
+  try {
+    const res = await fetch(`${FB_BASE}/polars`);
+    const data = await res.json();
+    const sel = document.getElementById('cfg-class');
+    sel.innerHTML = '<option value="">Select class…</option>';
+    if (data.documents) {
+      for (const doc of data.documents) {
+        const id = doc.name.split('/').pop();
+        const name = doc.fields?.name?.stringValue ?? id;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      }
+    } else {
+      // Fallback: hardcoded classes
+      sel.innerHTML = '<option value="">Select class…</option><option value="cape31">Cape 31</option><option value="dragon">Dragon</option>';
+    }
+  } catch(e) {
+    const sel = document.getElementById('cfg-class');
+    sel.innerHTML = '<option value="">Select class…</option><option value="cape31">Cape 31</option><option value="dragon">Dragon</option>';
+  }
+}
+
+async function onClassChange() {
+  const classId = document.getElementById('cfg-class').value;
+  if (!classId) return;
+  const statusEl = document.getElementById('polar-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Loading polar…';
+  try {
+    // Try Firestore first, fall back to /polars/ JSON file
+    let polar = null;
+    try {
+      const res = await fetch(`${FB_BASE}/polars/${classId}`);
+      const doc = await res.json();
+      if (doc.fields) {
+        polar = firestoreToObj(doc.fields);
+      }
+    } catch(e) {}
+    if (!polar) {
+      const res = await fetch(`../polars/${classId}.json`);
+      polar = await res.json();
+    }
+    STATE.polar = polar;
+    STATE.className = polar.name ?? classId;
+    document.getElementById('cfg-division').value = polar.division ?? polar.name ?? classId;
+    const tack = polar.wind_inference?.typical_tack_angle ?? '–';
+    statusEl.textContent = `✓ ${polar.name ?? classId} · tack angle ${tack}° · ${polar.tws?.length ?? '?'} TWS rows`;
+    statusEl.style.color = 'var(--teal)';
+    updateClassUI();
+  } catch(e) {
+    statusEl.textContent = `⚠ Could not load polar for ${classId}`;
+    statusEl.style.color = 'var(--amber)';
+  }
+}
+
+function firestoreToObj(fields) {
+  const obj = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (v.stringValue !== undefined) obj[k] = v.stringValue;
+    else if (v.doubleValue !== undefined) obj[k] = v.doubleValue;
+    else if (v.integerValue !== undefined) obj[k] = Number(v.integerValue);
+    else if (v.booleanValue !== undefined) obj[k] = v.booleanValue;
+    else if (v.arrayValue) obj[k] = (v.arrayValue.values ?? []).map(i =>
+      i.doubleValue ?? i.integerValue ?? i.stringValue ?? firestoreToObj(i.mapValue?.fields ?? {}));
+    else if (v.mapValue) obj[k] = firestoreToObj(v.mapValue.fields ?? {});
+  }
+  return obj;
+}
+
+function updateClassUI() {
+  const name = STATE.className;
+  const badge = document.getElementById('map-class-badge');
+  badge.textContent = name;
+  badge.style.display = name ? 'block' : 'none';
+  document.getElementById('dc-class-name').textContent = name || '––';
+  const tack = STATE.polar?.wind_inference?.typical_tack_angle;
+  document.getElementById('dc-tack-angle').textContent = tack ? `tack angle: ${tack}°` : 'tack angle: ––°';
+  document.getElementById('wf-tack-angle').textContent = tack ? `${tack}°` : '––';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TELEMETRY POLLING
+// ═══════════════════════════════════════════════════════════
+function parseEventId(input) {
+  input = input.trim();
+  const m = input.match(/player\.vakaros\.com\/watch\/([^\/]+)/);
+  return m ? m[1] : input;
+}
+
+function startPolling() {
+  const raw = document.getElementById('cfg-event-input').value;
+  STATE.eventId = parseEventId(raw);
+  if (!STATE.eventId) { toast('Enter an event ID or URL', 'err'); return; }
+  STATE.division = document.getElementById('cfg-division').value.trim();
+  STATE.windUser = +document.getElementById('cfg-wind-dir').value || 0;
+  STATE.windTWS  = +document.getElementById('cfg-tws').value || 12;
+  STATE.excludedSails = new Set(
+    document.getElementById('cfg-excluded').value.split(',').map(s=>s.trim()).filter(Boolean)
+  );
+  // Pre-assign mark SNs from config
+  applyConfigSNs();
+  if (STATE.pollInterval) clearInterval(STATE.pollInterval);
+  const pollMs = (+document.getElementById('cfg-poll').value || 30) * 1000;
+  STATE.connected = true;
+  setStatus('live', 'Connecting…');
+  fetchTelemetry();
+  STATE.pollInterval = setInterval(fetchTelemetry, pollMs);
+  showPage('map');
+  toast('Connected', 'ok');
+}
+
+function applyConfigSNs() {
+  const map = {
+    'cfg-rc-sn': 'RC', 'cfg-pin-sn': 'PIN',
+    'cfg-ww-sn': 'WW', 'cfg-offset-sn': 'WW-OFFSET',
+    'cfg-lw-port-sn': 'LW-PORT', 'cfg-lw-stbd-sn': 'LW-STBD'
+  };
+  for (const [id, role] of Object.entries(map)) {
+    const sn = document.getElementById(id).value.trim();
+    if (sn) STATE.markRoles[sn] = role;
+  }
+}
+
+async function fetchTelemetry() {
+  if (!STATE.eventId) return;
+  const now = Date.now();
+  const after = now - 15 * 60 * 1000;
+  let url = `${TELE_BASE}/${STATE.eventId}?after=${after}&before=${now}&limit=100000`;
+  if (STATE.division) url += `&division=${encodeURIComponent(STATE.division)}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.Rows) { setStatus('error', 'No data (check event ID)'); return; }
+    processRows(data.Rows);
+    STATE.lastFetch = Date.now();
+    setStatus('live', `${Object.keys(STATE.tracks).length} boats · ${data.Rows.length} rows`);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    runInference();
+    updateDataPage();
+    drawMap();
+  } catch(e) {
+    setStatus('error', e.message);
+  }
+}
+
+function processRows(rows) {
+  const newTracks = {};
+  const newMarks = {};
+  for (const row of rows) {
+    const isMarkRow = row.role === 'mark' && !row.sail;
+    if (isMarkRow) {
+      const sn = String(row.sn ?? row.device_sn ?? '');
+      if (!newMarks[sn]) newMarks[sn] = [];
+      newMarks[sn].push({ lat: row.lat, lon: row.lon, ts: row.ts });
+      continue;
+    }
+    const sail = String(row.sail ?? '').trim();
+    if (!sail || STATE.excludedSails.has(sail)) continue;
+    if (!newTracks[sail]) newTracks[sail] = [];
+    newTracks[sail].push({ ts: row.ts, lat: row.lat, lon: row.lon, sog: row.sog, cog: row.cog ?? row.hdg ?? 0 });
+    // Gun detection
+    if (row.stage === 'in_progress' && !STATE.gunTs) {
+      STATE.gunTs = row.ts - 20000;
+    }
+  }
+  // Merge tracks
+  for (const [sail, pts] of Object.entries(newTracks)) {
+    STATE.tracks[sail] = pts.sort((a,b) => a.ts - b.ts);
+  }
+  // Merge marks — use median position
+  for (const [sn, pts] of Object.entries(newMarks)) {
+    const lats = pts.map(p=>p.lat).sort((a,b)=>a-b);
+    const lons = pts.map(p=>p.lon).sort((a,b)=>a-b);
+    STATE.rawMarks[sn] = {
+      lat: lats[Math.floor(lats.length/2)],
+      lon: lons[Math.floor(lons.length/2)],
+      sn
+    };
+  }
+  resolveMarkRoles();
+}
+
+function resolveMarkRoles() {
+  const m = STATE.marks;
+  m.RC = null; m.PIN = null; m.WW = null; m.WW_OFFSET = null; m.LW_PORT = null; m.LW_STBD = null;
+  for (const [sn, role] of Object.entries(STATE.markRoles)) {
+    const pt = STATE.rawMarks[sn];
+    if (!pt) continue;
+    if (role === 'RC') m.RC = pt;
+    else if (role === 'PIN') m.PIN = pt;
+    else if (role === 'WW') m.WW = pt;
+    else if (role === 'WW-OFFSET') m.WW_OFFSET = pt;
+    else if (role === 'LW-PORT') m.LW_PORT = pt;
+    else if (role === 'LW-STBD') m.LW_STBD = pt;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WIND INFERENCE
+// ═══════════════════════════════════════════════════════════
+function runInference() {
+  const tracks = STATE.tracks;
+  const polar = STATE.polar;
+  if (!polar || Object.keys(tracks).length < 2) return;
+
+  const gun = STATE.gunTs ?? (Date.now() - 10 * 60 * 1000);
+  const tackAngle = polar.wind_inference?.typical_tack_angle ?? 42;
+
+  // Course axis from WW mark
+  const ww = STATE.marks.WW;
+  const lwP = STATE.marks.LW_PORT, lwS = STATE.marks.LW_STBD;
+  const lw = lwP && lwS ? { lat:(lwP.lat+lwS.lat)/2, lon:(lwP.lon+lwS.lon)/2 } : lwP ?? lwS ?? null;
+  let upwindAxis = null;
+  if (ww && lw) upwindAxis = brg(lw.lat, lw.lon, ww.lat, ww.lon);
+
+  const windowStart = gun + 120_000;
+  const windowEnd = gun + 720_000;
+
+  const uwPort = [], uwStbd = [], dwPort = [], dwStbd = [];
+
+  for (const [, track] of Object.entries(tracks)) {
+    const seg = track.filter(p => p.ts >= windowStart && p.ts <= windowEnd);
+    if (seg.length < 10) continue;
+    for (let i = 3; i < seg.length - 3; i++) {
+      const p = seg[i];
+      const sogKt = (p.sog ?? 0) * 0.539957;
+      if (sogKt < 2.5) continue;
+      const hdgs = [seg[i-3],seg[i-2],seg[i-1],p,seg[i+1],seg[i+2],seg[i+3]].map(s=>s.cog??0);
+      if (circSpread(hdgs) > 18) continue;
+      const weight = Math.min(3, sogKt / 5);
+      const cog = p.cog ?? 0;
+      const leg = upwindAxis != null ? classifyLeg(cog, upwindAxis) : 'upwind';
+      const ref = upwindAxis ?? 0;
+      const rel = ((cog - ref + 360) % 360);
+      if (leg === 'upwind') {
+        (rel < 180 ? uwStbd : uwPort).push({ angle: cog, weight });
+      } else if (leg === 'downwind') {
+        (rel < 180 ? dwPort : dwStbd).push({ angle: cog, weight });
+      }
+    }
+  }
+
+  let wfUp = null, wfDw = null;
+  if (uwPort.length >= 3 && uwStbd.length >= 3) {
+    const mp = circMean(uwPort), ms = circMean(uwStbd);
+    if (mp != null && ms != null) wfUp = circBlend(mp, uwPort.length, ms, uwStbd.length);
+  }
+  if (dwPort.length >= 3 && dwStbd.length >= 3) {
+    const mp = circMean(dwPort), ms = circMean(dwStbd);
+    if (mp != null && ms != null) wfDw = (circBlend(mp, dwPort.length, ms, dwStbd.length) + 180) % 360;
+  }
+
+  let wf = wfUp ?? wfDw ?? upwindAxis;
+  if (wfUp != null && wfDw != null) {
+    const agr = angDiff(wfUp, wfDw);
+    wf = circBlend(wfUp, Math.max(1, uwPort.length+uwStbd.length)*1.3,
+                   wfDw, Math.max(1, dwPort.length+dwStbd.length)*0.5 * Math.max(0.3, 1-agr/45));
+  }
+
+  const stableN = uwPort.length + uwStbd.length + dwPort.length + dwStbd.length;
+  let conf = Math.min(0.97, 0.15 + Math.min(0.4, stableN/120) + (wfUp!=null?0.22:0) + (wfDw!=null?0.06:0));
+  if (wfUp!=null && wfDw!=null) conf *= Math.max(0.5, 1 - angDiff(wfUp,wfDw)/50);
+  const fallback = wfUp==null && wfDw==null;
+  if (fallback) conf = 0.10;
+
+  STATE.windInferred = { wf: wf!=null?+wf.toFixed(1):null, wfUp, wfDw, conf: +conf.toFixed(2),
+    stableN, portN: uwPort.length, stbdN: uwStbd.length,
+    portMean: circMean(uwPort), stbdMean: circMean(uwStbd), fallback };
+
+  // Blend user + inferred
+  if (wf != null && !fallback) {
+    const wu = 0.35, wi = 0.65;
+    const blended = circBlend(STATE.windUser, wu, wf, wi);
+    STATE.windBlended = { dir: blended, method: 'blend' };
+  } else {
+    STATE.windBlended = null;
+  }
+
+  updateWindPage();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DATA PAGE UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateDataPage() {
+  const { marks, windUser, windTWS, windInferred, windBlended, polar } = STATE;
+  const windDir = windBlended?.dir ?? windUser;
+
+  // Wind badge
+  document.getElementById('mbadge-dir').textContent = Math.round(windDir) + '° ' + card(windDir);
+  document.getElementById('mbadge-tws').textContent = windTWS + 'kt';
+
+  // User wind card
+  document.getElementById('dc-wind-user').textContent = Math.round(windUser) + '°';
+  document.getElementById('dc-wind-user-tws').textContent = windTWS + 'kt · ' + card(windUser);
+
+  // Inferred wind card
+  if (windInferred && windInferred.wf != null && !windInferred.fallback) {
+    document.getElementById('dc-wind-inf').textContent = Math.round(windInferred.wf) + '°';
+    document.getElementById('dc-wind-inf-conf').textContent = 'conf: ' + (windInferred.conf*100).toFixed(0) + '%';
+  } else {
+    document.getElementById('dc-wind-inf').textContent = '––';
+    document.getElementById('dc-wind-inf-conf').textContent = 'insufficient fleet data';
+  }
+
+  // Start line bias
+  const { RC, PIN, WW, LW_PORT, LW_STBD } = marks;
+  if (RC && PIN) {
+    const len = hav(RC.lat, RC.lon, PIN.lat, PIN.lon);
+    document.getElementById('pc-line-len').textContent = Math.round(len) + 'm';
+
+    // Compute line bias via optimal start scan
+    const bias = computeLineBias(RC, PIN, windDir);
+    drawStartLineCanvas(RC, PIN, windDir, bias);
+    if (bias) {
+      document.getElementById('pc-bias-favoured').textContent = bias.favoured;
+      document.getElementById('pc-bias-favoured').className = 'pc-value ' + (bias.favoured === 'RC' ? 'amber' : 'teal');
+      document.getElementById('pc-pin-excess').textContent = bias.pinExcess != null ? '+' + bias.pinExcess.toFixed(1) + 's' : '––';
+      document.getElementById('pc-rc-excess').textContent = bias.rcExcess != null ? '+' + bias.rcExcess.toFixed(1) + 's' : '––';
+    }
+    // WW dist
+    if (WW) {
+      const mid = { lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2 };
+      document.getElementById('dc-ww-dist').textContent = Math.round(hav(mid.lat,mid.lon,WW.lat,WW.lon)) + 'm';
+    }
+  }
+
+  // LW Gate bias
+  const lwExists = LW_PORT && LW_STBD;
+  if (lwExists) {
+    const gateAxis = brg(LW_PORT.lat, LW_PORT.lon, LW_STBD.lat, LW_STBD.lon);
+    const idealAxis = (windDir + 90 + 360) % 360;
+    const diff = ((gateAxis - idealAxis + 180 + 360) % 360) - 180;
+    document.getElementById('pc-lw-perp').textContent = Math.abs(diff).toFixed(1) + '°';
+    document.getElementById('pc-lw-axis').textContent = Math.round(gateAxis) + '°';
+    const favoured = diff > 0.5 ? 'PORT' : diff < -0.5 ? 'STBD' : 'SQUARE';
+    document.getElementById('pc-lw-favoured').textContent = favoured;
+    document.getElementById('pc-lw-favoured').className = 'pc-value ' + (favoured === 'SQUARE' ? 'green' : 'amber');
+    document.getElementById('pc-lw-sub').textContent = Math.abs(diff) < 1 ? 'square' : (diff > 0 ? 'port gate favoured' : 'stbd gate favoured');
+  }
+
+  // Course axis
+  if (WW && (lwExists || LW_PORT || LW_STBD)) {
+    const lw = lwExists
+      ? { lat:(LW_PORT.lat+LW_STBD.lat)/2, lon:(LW_PORT.lon+LW_STBD.lon)/2 }
+      : (LW_PORT ?? LW_STBD);
+    const ca = brg(lw.lat, lw.lon, WW.lat, WW.lon);
+    document.getElementById('pc-course-axis').textContent = Math.round(ca) + '°';
+    document.getElementById('pc-course-axis-card').textContent = card(ca) + ' · LW→WW';
+    document.getElementById('pc-course-wind').textContent = Math.round(windDir) + '°';
+    document.getElementById('pc-course-wind-sub').textContent = card(windDir);
+    const windAngle = angDiff(ca, windDir);
+    document.getElementById('pc-wind-angle').textContent = Math.round(windAngle) + '°';
+  }
+}
+
+function computeLineBias(RC, PIN, windDir) {
+  if (!RC || !PIN) return null;
+  const N = 40;
+  const tws = STATE.windTWS;
+  let minT = Infinity, minIdx = -1;
+  const times = [];
+  for (let i = 0; i <= N; i++) {
+    const f = i / N;
+    const sLat = RC.lat + (PIN.lat - RC.lat) * f;
+    const sLon = RC.lon + (PIN.lon - RC.lon) * f;
+    // Simple time-to-layline using polar speed if available
+    let spd = 6; // fallback kts
+    if (STATE.polar) {
+      const twa = 40; // typical upwind TWA
+      spd = polarSpeed(STATE.polar, twa, tws) ?? 6;
+    }
+    const spdMs = spd * 0.514444;
+    const t = spdMs > 0 ? hav(sLat, sLon, 0, 0) / spdMs : 999; // placeholder — real time needs WW
+    times.push({ f, lat: sLat, lon: sLon });
+    if (i === 0) { /* RC end */ }
+  }
+  // Use bearing-based bias (simpler, more reliable without WW mark)
+  const lineAxis = brg(RC.lat, RC.lon, PIN.lat, PIN.lon);
+  const perpToWind = (windDir + 90 + 360) % 360;
+  const bias = ((lineAxis - perpToWind + 180 + 360) % 360) - 180;
+  const biasAbs = Math.abs(bias);
+  const favoured = bias > 0.5 ? 'RC' : bias < -0.5 ? 'PIN' : 'SQUARE';
+  // Convert degrees to approximate seconds (rough: 1° ≈ 2s on a typical line)
+  const toSec = d => +(d * 1.8).toFixed(1);
+  return {
+    favoured,
+    biasDeg: +bias.toFixed(1),
+    rcExcess: favoured === 'PIN' ? toSec(biasAbs) : 0,
+    pinExcess: favoured === 'RC' ? toSec(biasAbs) : 0
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START LINE CANVAS
+// ═══════════════════════════════════════════════════════════
+function drawStartLineCanvas(RC, PIN, windDir, bias) {
+  const cvs = document.getElementById('start-line-canvas');
+  if (!cvs) return;
+  cvs.width = cvs.offsetWidth * devicePixelRatio;
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const margin = 24;
+  const lineY = H * 0.55;
+  const lineX0 = margin, lineX1 = W - margin;
+
+  // Line
+  ctx.strokeStyle = '#1a3a55';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(lineX0, lineY); ctx.lineTo(lineX1, lineY); ctx.stroke();
+
+  // Bias heat: colour the favoured half
+  if (bias && bias.favoured !== 'SQUARE') {
+    const grad = ctx.createLinearGradient(lineX0, 0, lineX1, 0);
+    if (bias.favoured === 'RC') {
+      grad.addColorStop(0, 'rgba(0,229,204,0)');
+      grad.addColorStop(0.6, 'rgba(0,229,204,0)');
+      grad.addColorStop(1, 'rgba(255,183,0,0.3)');
+    } else {
+      grad.addColorStop(0, 'rgba(0,229,204,0.3)');
+      grad.addColorStop(0.4, 'rgba(0,229,204,0)');
+      grad.addColorStop(1, 'rgba(0,229,204,0)');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(lineX0, lineY - 6, lineX1 - lineX0, 12);
+  }
+
+  // Wind arrow (above line)
+  const arrowX = (lineX0 + lineX1) / 2;
+  ctx.strokeStyle = '#00e5cc';
+  ctx.lineWidth = 1.5;
+  ctx.save();
+  ctx.translate(arrowX, lineY - 14);
+  ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(0, -8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-4, -4); ctx.lineTo(0, -8); ctx.lineTo(4, -4); ctx.stroke();
+  ctx.restore();
+
+  // Endpoint dots
+  const dotR = 5;
+  [[lineX0, bias?.favoured === 'PIN' ? '#00e5cc' : '#1a3a55'],
+   [lineX1, bias?.favoured === 'RC'  ? '#ffb700' : '#1a3a55']].forEach(([x, col]) => {
+    ctx.beginPath(); ctx.arc(x, lineY, dotR, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+  });
+
+  // Labels
+  ctx.font = `bold ${9 * devicePixelRatio}px Orbitron, monospace`;
+  ctx.fillStyle = '#3d6e8a';
+  ctx.textAlign = 'left';
+  ctx.fillText('PIN', lineX0 - 2, lineY + 16);
+  ctx.textAlign = 'right';
+  ctx.fillText('RC', lineX1 + 2, lineY + 16);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WIND PAGE UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateWindPage() {
+  const inf = STATE.windInferred;
+  const windDir = STATE.windBlended?.dir ?? STATE.windUser;
+
+  document.getElementById('wes-value').textContent = Math.round(STATE.windUser) + '° / ' + STATE.windTWS + 'kt';
+  document.getElementById('wind-page-subtitle').textContent = card(windDir) + ' ' + Math.round(windDir) + '°';
+
+  if (inf) {
+    document.getElementById('wf-inf-dir').textContent = inf.wf != null ? Math.round(inf.wf) + '° ' + card(inf.wf) : '––';
+    document.getElementById('wf-up').textContent = inf.wfUp != null ? Math.round(inf.wfUp) + '°' : '––';
+    document.getElementById('wf-dw').textContent = inf.wfDw != null ? Math.round(inf.wfDw) + '°' : '––';
+    document.getElementById('wf-agreement').textContent = inf.wfUp!=null && inf.wfDw!=null ? angDiff(inf.wfUp,inf.wfDw).toFixed(1)+'°' : '––';
+    document.getElementById('wf-samples').textContent = `${inf.portN}P + ${inf.stbdN}S (uw) · total ${inf.stableN}`;
+    document.getElementById('conf-fill').style.width = ((inf.conf ?? 0) * 100) + '%';
+    document.getElementById('wf-conf-pct').textContent = 'conf: ' + ((inf.conf ?? 0) * 100).toFixed(0) + '%';
+    document.getElementById('cl-port').textContent = inf.portMean != null ? Math.round(inf.portMean) + '°' : '––°';
+    document.getElementById('cl-stbd').textContent = inf.stbdMean != null ? Math.round(inf.stbdMean) + '°' : '––°';
+    document.getElementById('cl-port-n').textContent = `${inf.portN} samples`;
+    document.getElementById('cl-stbd-n').textContent = `${inf.stbdN} samples`;
+  }
+
+  drawWindRose();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAP DRAWING
+// ═══════════════════════════════════════════════════════════
+function drawMap() {
+  const cvs = document.getElementById('map-canvas');
+  cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight;
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const { marks, tracks, windInferred, windUser, windBlended, mapNorthUp } = STATE;
+  const windDir = windBlended?.dir ?? windUser;
+
+  // Collect all lat/lon points for auto-fit
+  const pts = [];
+  for (const m of Object.values(marks)) { if (m) pts.push(m); }
+  for (const tr of Object.values(tracks)) { if (tr.length) pts.push(tr[tr.length-1]); }
+  if (STATE.gpsPos) pts.push(STATE.gpsPos);
+  if (!pts.length) {
+    ctx.fillStyle = '#3d6e8a';
+    ctx.font = '13px Orbitron, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Waiting for telemetry…', W/2, H/2);
+    return;
+  }
+
+  // Compute bounds
+  let minLat=Infinity, maxLat=-Infinity, minLon=Infinity, maxLon=-Infinity;
+  for (const p of pts) {
+    minLat=Math.min(minLat,p.lat); maxLat=Math.max(maxLat,p.lat);
+    minLon=Math.min(minLon,p.lon); maxLon=Math.max(maxLon,p.lon);
+  }
+  const pad = 0.0003;
+  minLat-=pad; maxLat+=pad; minLon-=pad; maxLon+=pad;
+  const scaleX = W / ((maxLon-minLon)*Math.cos((minLat+maxLat)/2*D2R)*111320);
+  const scaleY = H / ((maxLat-minLat)*111320);
+  const scale = Math.min(scaleX,scaleY) * STATE.mapScale;
+  const midLat = (minLat+maxLat)/2, midLon = (minLon+maxLon)/2;
+
+  const toXY = (lat, lon) => {
+    const x = (lon-midLon)*Math.cos(midLat*D2R)*111320*scale + W/2 + STATE.mapOffX;
+    const y = -(lat-midLat)*111320*scale + H/2 + STATE.mapOffY;
+    return [x, y];
+  };
+
+  // Wind direction arrow (background)
+  drawWindArrow(ctx, W, H, windDir);
+
+  // Course lines
+  const { RC, PIN, WW, WW_OFFSET, LW_PORT, LW_STBD } = marks;
+
+  // Start line
+  if (RC && PIN) {
+    const [rx,ry] = toXY(RC.lat,RC.lon), [px,py] = toXY(PIN.lat,PIN.lon);
+    ctx.strokeStyle = '#ffb700'; ctx.lineWidth = 2.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(px,py); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // LW gate line
+  if (LW_PORT && LW_STBD) {
+    const [lp1x,lp1y]=toXY(LW_PORT.lat,LW_PORT.lon), [lp2x,lp2y]=toXY(LW_STBD.lat,LW_STBD.lon);
+    ctx.strokeStyle = '#00b8a4'; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(lp1x,lp1y); ctx.lineTo(lp2x,lp2y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Course axis line (WW ↔ LW midpoint)
+  const lw = LW_PORT && LW_STBD
+    ? { lat:(LW_PORT.lat+LW_STBD.lat)/2, lon:(LW_PORT.lon+LW_STBD.lon)/2 }
+    : (LW_PORT ?? LW_STBD ?? null);
+  if (WW && lw) {
+    const [wx,wy]=toXY(WW.lat,WW.lon), [lx,ly]=toXY(lw.lat,lw.lon);
+    ctx.strokeStyle = 'rgba(0,229,204,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,6]);
+    ctx.beginPath(); ctx.moveTo(wx,wy); ctx.lineTo(lx,ly); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Boat positions (latest point)
+  const boatColors = ['#00e5cc','#ffb700','#00e67a','#ff4455','#a78bfa','#f59e0b','#34d399','#f87171'];
+  let colorIdx = 0;
+  for (const [sail, track] of Object.entries(tracks)) {
+    if (!track.length) continue;
+    const p = track[track.length-1];
+    const [bx,by] = toXY(p.lat,p.lon);
+    const col = boatColors[colorIdx++ % boatColors.length];
+    // Boat heading indicator
+    const hdg = (p.cog ?? 0) * D2R;
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bx + Math.sin(hdg)*12, by - Math.cos(hdg)*12);
+    ctx.lineTo(bx - Math.sin(hdg)*6, by + Math.cos(hdg)*6);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx,by,5,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    // Sail number label
+    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.fillStyle = col; ctx.textAlign = 'center';
+    ctx.fillText(sail, bx, by - 10);
+  }
+
+  // Draw marks
+  drawMark(ctx, toXY, RC,      '#ffb700', 'RC',       6);
+  drawMark(ctx, toXY, PIN,     '#ffb700', 'PIN',      6);
+  drawMark(ctx, toXY, WW,      '#00e5cc', 'WW',       8);
+  drawMark(ctx, toXY, WW_OFFSET,'#00b8a4','OFFSET',   6);
+  drawMark(ctx, toXY, LW_PORT, '#00b8a4', 'LW-P',     7);
+  drawMark(ctx, toXY, LW_STBD, '#00b8a4', 'LW-S',     7);
+
+  // GPS position
+  if (STATE.gpsPos) {
+    const [gx,gy] = toXY(STATE.gpsPos.lat, STATE.gpsPos.lon);
+    ctx.beginPath(); ctx.arc(gx,gy,8,0,Math.PI*2);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fill();
+  }
+
+  // Unassigned raw marks (small grey dots — tap to assign)
+  for (const [sn, m] of Object.entries(STATE.rawMarks)) {
+    if (STATE.markRoles[sn] === 'IGNORE') continue;
+    const assigned = Object.values(STATE.markRoles).includes(STATE.markRoles[sn]);
+    const role = STATE.markRoles[sn];
+    if (role && role !== 'IGNORE') continue; // already drawn above
+    const [mx,my] = toXY(m.lat, m.lon);
+    ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2);
+    ctx.fillStyle='#3d6e8a'; ctx.fill();
+    ctx.font='8px Share Tech Mono'; ctx.fillStyle='#3d6e8a'; ctx.textAlign='center';
+    ctx.fillText(sn, mx, my-8);
+  }
+}
+
+function drawMark(ctx, toXY, mark, color, label, r) {
+  if (!mark) return;
+  const [mx,my] = toXY(mark.lat, mark.lon);
+  ctx.beginPath(); ctx.arc(mx,my,r,0,Math.PI*2);
+  ctx.fillStyle = color+'33'; ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  ctx.font = `bold 9px Orbitron, monospace`;
+  ctx.fillStyle = color; ctx.textAlign = 'center';
+  ctx.fillText(label, mx, my + r + 10);
+}
+
+function drawWindArrow(ctx, W, H, windDir) {
+  const cx = W - 36, cy = 36, r = 22;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((windDir + 180) * D2R); // arrow points downwind
+  ctx.strokeStyle = 'rgba(0,229,204,0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(0,r); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-5,r-8); ctx.lineTo(0,r); ctx.lineTo(5,r-8); ctx.stroke();
+  ctx.restore();
+}
+
+function drawWindRose() {
+  const cvs = document.getElementById('wind-rose');
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height, cx = W/2, cy = H/2, r = 90;
+  ctx.clearRect(0,0,W,H);
+
+  // Rings
+  [0.33,0.66,1].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx,cy,r*f,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(26,58,85,${f===1?0.8:0.4})`; ctx.lineWidth=1; ctx.stroke();
+  });
+  // Cardinal labels
+  [['N',0],['E',90],['S',180],['W',270]].forEach(([l,a]) => {
+    const x=cx+Math.sin(a*D2R)*(r+12), y=cy-Math.cos(a*D2R)*(r+12);
+    ctx.font='10px Orbitron'; ctx.fillStyle='#3d6e8a'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(l,x,y);
+  });
+
+  const windDir = STATE.windBlended?.dir ?? STATE.windUser;
+  const inf = STATE.windInferred;
+
+  // Port/Stbd cluster arcs
+  if (inf?.portMean != null) drawRoseArrow(ctx,cx,cy,r*0.7,inf.portMean,'rgba(255,68,85,0.5)',3);
+  if (inf?.stbdMean != null) drawRoseArrow(ctx,cx,cy,r*0.7,inf.stbdMean,'rgba(0,230,122,0.5)',3);
+
+  // Inferred wind
+  if (inf?.wf != null) drawRoseArrow(ctx,cx,cy,r*0.85,inf.wf,'rgba(0,229,204,0.7)',2);
+
+  // User / blended wind (main arrow)
+  drawRoseArrow(ctx,cx,cy,r,windDir,'#ffffff',2.5);
+}
+
+function drawRoseArrow(ctx,cx,cy,r,dir,color,lw) {
+  const a = dir * D2R;
+  const tx=cx+Math.sin(a)*r, ty=cy-Math.cos(a)*r;
+  ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tx,ty); ctx.stroke();
+  ctx.beginPath(); ctx.arc(tx,ty,3,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAP INTERACTIONS
+// ═══════════════════════════════════════════════════════════
+function setupMapInteractions() {
+  const cvs = document.getElementById('map-canvas');
+  let lastDist = null, tapTimer = null, tapPt = null;
+
+  cvs.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      STATE.mapDragging = true;
+      STATE.mapLastX = e.touches[0].clientX;
+      STATE.mapLastY = e.touches[0].clientY;
+      tapPt = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      tapTimer = setTimeout(() => { tapPt = null; }, 300);
+    } else if (e.touches.length === 2) {
+      lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  cvs.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && STATE.mapDragging) {
+      STATE.mapOffX += e.touches[0].clientX - STATE.mapLastX;
+      STATE.mapOffY += e.touches[0].clientY - STATE.mapLastY;
+      STATE.mapLastX = e.touches[0].clientX;
+      STATE.mapLastY = e.touches[0].clientY;
+      drawMap();
+    } else if (e.touches.length === 2 && lastDist) {
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      STATE.mapScale *= d / lastDist;
+      STATE.mapScale = Math.max(0.3, Math.min(20, STATE.mapScale));
+      lastDist = d;
+      document.getElementById('zoom-reset-btn').style.display = STATE.mapScale !== 1 || STATE.mapOffX !== 0 ? 'flex' : 'none';
+      drawMap();
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  cvs.addEventListener('touchend', e => {
+    if (e.touches.length === 0) { STATE.mapDragging = false; lastDist = null; }
+    // Tap detection for mark assignment
+    if (tapPt && STATE.assignMode) {
+      clearTimeout(tapTimer);
+      handleMapTap(tapPt.x, tapPt.y);
+      tapPt = null;
+    }
+  });
+}
+
+function handleMapTap(x, y) {
+  // Find nearest raw mark to tap point
+  const cvs = document.getElementById('map-canvas');
+  const W = cvs.offsetWidth, H = cvs.offsetHeight;
+  let nearest = null, nearestD = 30; // px threshold
+  for (const [sn, m] of Object.entries(STATE.rawMarks)) {
+    const [mx,my] = latLonToCanvas(m.lat, m.lon, W, H);
+    const d = Math.hypot(mx-x, my-y);
+    if (d < nearestD) { nearestD = d; nearest = sn; }
+  }
+  if (nearest) {
+    STATE.pendingRoleSN = nearest;
+    const picker = document.getElementById('mark-role-picker');
+    document.getElementById('mrp-sn-label').textContent = 'SN ' + nearest;
+    // Highlight current role
+    picker.querySelectorAll('.mrp-btn').forEach(b => b.classList.remove('active'));
+    const cur = STATE.markRoles[nearest];
+    if (cur) picker.querySelector(`[onclick="assignMarkRole('${cur}')"]`)?.classList.add('active');
+    picker.style.left = Math.min(x, W-180) + 'px';
+    picker.style.top  = Math.min(y, H-320) + 'px';
+    picker.classList.add('visible');
+  }
+}
+
+function latLonToCanvas(lat, lon, W, H) {
+  // Simplified — reuses current state bounds
+  const pts = [];
+  for (const m of Object.values(STATE.marks)) { if (m) pts.push(m); }
+  for (const tr of Object.values(STATE.tracks)) { if (tr.length) pts.push(tr[tr.length-1]); }
+  if (!pts.length) return [0,0];
+  let minLat=Infinity,maxLat=-Infinity,minLon=Infinity,maxLon=-Infinity;
+  for (const p of pts) { minLat=Math.min(minLat,p.lat);maxLat=Math.max(maxLat,p.lat);minLon=Math.min(minLon,p.lon);maxLon=Math.max(maxLon,p.lon); }
+  const pad=0.0003; minLat-=pad;maxLat+=pad;minLon-=pad;maxLon+=pad;
+  const midLat=(minLat+maxLat)/2,midLon=(minLon+maxLon)/2;
+  const scaleX=W/((maxLon-minLon)*Math.cos((minLat+maxLat)/2*D2R)*111320);
+  const scaleY=H/((maxLat-minLat)*111320);
+  const scale=Math.min(scaleX,scaleY)*STATE.mapScale;
+  return [(lon-midLon)*Math.cos(midLat*D2R)*111320*scale+W/2+STATE.mapOffX,
+          -(lat-midLat)*111320*scale+H/2+STATE.mapOffY];
+}
+
+function assignMarkRole(role) {
+  if (!STATE.pendingRoleSN) return;
+  STATE.markRoles[STATE.pendingRoleSN] = role;
+  closeMarkRolePicker();
+  resolveMarkRoles();
+  updateDataPage();
+  drawMap();
+  toast(`SN ${STATE.pendingRoleSN} → ${role}`, 'ok');
+}
+
+function closeMarkRolePicker() {
+  document.getElementById('mark-role-picker').classList.remove('visible');
+  STATE.pendingRoleSN = null;
+}
+
+function enterMarkAssignMode() {
+  STATE.assignMode = !STATE.assignMode;
+  const btn = document.getElementById('assign-marks-btn');
+  btn.classList.toggle('active-mode', STATE.assignMode);
+  document.getElementById('mark-assign-banner').style.display = STATE.assignMode ? 'flex' : 'none';
+  if (STATE.assignMode) toast('Tap a mark to assign its role', 'ok');
+}
+
+function confirmMarkAssignments() {
+  STATE.assignMode = false;
+  document.getElementById('assign-marks-btn').classList.remove('active-mode');
+  document.getElementById('mark-assign-banner').style.display = 'none';
+  toast('Mark assignments confirmed', 'ok');
+}
+
+function toggleOrientation() {
+  STATE.mapNorthUp = !STATE.mapNorthUp;
+  document.getElementById('orient-btn').textContent = STATE.mapNorthUp ? 'N↑' : 'WND↑';
+  drawMap();
+}
+
+function resetMapZoom() {
+  STATE.mapScale = 1; STATE.mapOffX = 0; STATE.mapOffY = 0;
+  document.getElementById('zoom-reset-btn').style.display = 'none';
+  drawMap();
+}
+
+function pingGPS() {
+  if (!navigator.geolocation) { toast('GPS not available', 'err'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    STATE.gpsPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    toast('GPS position updated', 'ok');
+    drawMap();
+  }, () => toast('GPS error', 'err'));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WIND POPUP / INLINE EDIT
+// ═══════════════════════════════════════════════════════════
+function toggleWindPopup() {
+  const popup = document.getElementById('wind-edit-popup');
+  popup.classList.toggle('visible');
+  if (popup.classList.contains('visible')) {
+    document.getElementById('wep-dir').value = Math.round(STATE.windUser);
+    document.getElementById('wep-tws').value = STATE.windTWS;
+    document.getElementById('wep-tws-val').textContent = STATE.windTWS + 'kt';
+  }
+}
+
+function applyWindPopup() {
+  const dir = +document.getElementById('wep-dir').value;
+  const tws = +document.getElementById('wep-tws').value;
+  STATE.windUser = ((dir % 360) + 360) % 360;
+  STATE.windTWS = tws;
+  document.getElementById('cfg-wind-dir').value = STATE.windUser;
+  document.getElementById('cfg-tws').value = tws;
+  document.getElementById('wind-edit-popup').classList.remove('visible');
+  runInference();
+  updateDataPage();
+  drawMap();
+}
+
+function toggleWindInlineEdit() {
+  const el = document.getElementById('wind-inline-edit');
+  el.classList.toggle('visible');
+  if (el.classList.contains('visible')) {
+    document.getElementById('wie-dir').value = Math.round(STATE.windUser);
+    document.getElementById('wie-tws').value = STATE.windTWS;
+    document.getElementById('wie-tws-val').textContent = STATE.windTWS + 'kt';
+  }
+}
+
+function applyWindInline() {
+  const dir = +document.getElementById('wie-dir').value;
+  const tws = +document.getElementById('wie-tws').value;
+  STATE.windUser = ((dir % 360) + 360) % 360;
+  STATE.windTWS = tws;
+  document.getElementById('cfg-wind-dir').value = STATE.windUser;
+  document.getElementById('cfg-tws').value = tws;
+  document.getElementById('wind-inline-edit').classList.remove('visible');
+  document.getElementById('wes-value').textContent = Math.round(STATE.windUser) + '° / ' + tws + 'kt';
+  runInference();
+  updateDataPage();
+  drawMap();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAV / PAGE SWITCHING
+// ═══════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'map') { setTimeout(drawMap, 50); }
+  if (name === 'wind') updateWindPage();
+  if (name === 'data') updateDataPage();
+}
+
+function setStatus(state, msg) {
+  ['data-dot','config-status-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'status-dot ' + state; }
+  });
+  const st = document.getElementById('status-text');
+  if (st) st.textContent = msg;
+  const ct = document.getElementById('config-status-txt');
+  if (ct) ct.textContent = msg.toUpperCase().slice(0,24);
+}
+
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.className = ''; }, 2200);
+}
+
+function resetAll() {
+  if (STATE.pollInterval) clearInterval(STATE.pollInterval);
+  STATE.tracks = {}; STATE.rawMarks = {}; STATE.markRoles = {};
+  STATE.marks = { RC:null,PIN:null,WW:null,WW_OFFSET:null,LW_PORT:null,LW_STBD:null };
+  STATE.windInferred = null; STATE.windBlended = null; STATE.gunTs = null;
+  STATE.connected = false; STATE.mapScale = 1; STATE.mapOffX = 0; STATE.mapOffY = 0;
+  setStatus('', 'Not connected');
+  drawMap();
+  toast('Reset', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GEOMETRY HELPERS (inline — no module import needed)
+// ═══════════════════════════════════════════════════════════
+function hav(lat1,lon1,lat2,lon2){const R=6371000,dLat=(lat2-lat1)*D2R,dLon=(lon2-lon1)*D2R,a=Math.sin(dLat/2)**2+Math.cos(lat1*D2R)*Math.cos(lat2*D2R)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+function brg(lat1,lon1,lat2,lon2){const dLon=(lon2-lon1)*D2R,y=Math.sin(dLon)*Math.cos(lat2*D2R),x=Math.cos(lat1*D2R)*Math.sin(lat2*D2R)-Math.sin(lat1*D2R)*Math.cos(lat2*D2R)*Math.cos(dLon);return(Math.atan2(y,x)*R2D+360)%360}
+function angDiff(a,b){return Math.min(((a-b+360)%360),((b-a+360)%360))}
+function card(d){return['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16]}
+function circMean(items){if(!items||!items.length)return null;let sx=0,sy=0,sw=0;for(const it of items){const w=it.weight??1;sx+=Math.cos(it.angle*D2R)*w;sy+=Math.sin(it.angle*D2R)*w;sw+=w}if(!sw)return null;return(Math.atan2(sy/sw,sx/sw)*R2D+360)%360}
+function circBlend(a,wa,b,wb){const sx=Math.cos(a*D2R)*wa+Math.cos(b*D2R)*wb,sy=Math.sin(a*D2R)*wa+Math.sin(b*D2R)*wb;return(Math.atan2(sy,sx)*R2D+360)%360}
+function circSpread(angles){let sx=0,sy=0;for(const a of angles){sx+=Math.cos(a*D2R);sy+=Math.sin(a*D2R)}const R=Math.hypot(sx,sy)/angles.length;return R>0.01?Math.acos(Math.min(1,R))*R2D:180}
+function classifyLeg(cog,upwindAxis){const rel=((cog-upwindAxis+360)%360);if(rel<=70||rel>=290)return'upwind';if(rel>=110&&rel<=250)return'downwind';return'reach'}
+function polarSpeed(polar,twa,tws){if(!polar||!polar.speeds)return null;const twas=polar.twa,twss=polar.tws,speeds=polar.speeds;const twaCl=Math.max(twas[0],Math.min(twas[twas.length-1],twa)),twsCl=Math.max(twss[0],Math.min(twss[twss.length-1],tws));let ti=twss.findIndex(t=>t>=twsCl);if(ti<=0)ti=1;const t0=twss[ti-1],t1=twss[ti],tF=(twsCl-t0)/(t1-t0);let ai=twas.findIndex(a=>a>=twaCl);if(ai<=0)ai=1;const a0=twas[ai-1],a1=twas[ai],aF=(twaCl-a0)/(a1-a0);return speeds[ti-1][ai-1]*(1-tF)*(1-aF)+speeds[ti-1][ai]*(1-tF)*aF+speeds[ti][ai-1]*tF*(1-aF)+speeds[ti][ai]*tF*aF}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  loadClasses();
+  setupMapInteractions();
+  // Resize map canvas on orientation change
+  window.addEventListener('resize', () => { if (document.getElementById('page-map').classList.contains('active')) drawMap(); });
+});
+</script>
+</body>
+</html>
