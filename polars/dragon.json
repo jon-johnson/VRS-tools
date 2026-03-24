@@ -1,0 +1,15 @@
+{
+  "class": "dragon",
+  "name": "Dragon",
+  "source": "placeholder — replace with actual polar data",
+  "units": { "speed": "knots", "twa": "degrees" },
+  "twa": [30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180],
+  "tws": [4,6,8,10,12,14,16,18,20],
+  "speeds": null,
+  "vmg_upwind_peaks": null,
+  "vmg_downwind_peaks": null,
+  "wind_inference": {
+    "typical_tack_angle": 44,
+    "note": "Estimated typical Dragon upwind tack angle. Replace when polar data is available."
+  }
+}
