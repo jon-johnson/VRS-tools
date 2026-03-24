@@ -808,12 +808,19 @@ function runInference() {
   const gun = STATE.gunTs ?? (Date.now() - 10 * 60 * 1000);
   const tackAngle = polar.wind_inference?.typical_tack_angle ?? 42;
 
-  // Course axis from WW mark
+  // Course axis from mid start line → WW (most reliable reference)
   const ww = STATE.marks.WW;
-  const lwP = STATE.marks.LW_PORT, lwS = STATE.marks.LW_STBD;
-  const lw = lwP && lwS ? { lat:(lwP.lat+lwS.lat)/2, lon:(lwP.lon+lwS.lon)/2 } : lwP ?? lwS ?? null;
+  const RC2 = STATE.marks.RC, PIN2 = STATE.marks.PIN;
   let upwindAxis = null;
-  if (ww && lw) upwindAxis = brg(lw.lat, lw.lon, ww.lat, ww.lon);
+  if (ww && RC2 && PIN2) {
+    const mid = { lat:(RC2.lat+PIN2.lat)/2, lon:(RC2.lon+PIN2.lon)/2 };
+    upwindAxis = brg(mid.lat, mid.lon, ww.lat, ww.lon);
+  } else if (ww) {
+    // Fallback: use LW gate midpoint if no start line
+    const lwP = STATE.marks.LW_PORT, lwS = STATE.marks.LW_STBD;
+    const lw = lwP && lwS ? { lat:(lwP.lat+lwS.lat)/2, lon:(lwP.lon+lwS.lon)/2 } : lwP ?? lwS ?? null;
+    if (lw) upwindAxis = brg(lw.lat, lw.lon, ww.lat, ww.lon);
+  }
 
   const windowStart = gun + 120_000;
   const windowEnd = gun + 720_000;
@@ -941,14 +948,12 @@ function updateDataPage() {
     document.getElementById('pc-lw-sub').textContent = Math.abs(diff) < 1 ? 'square' : (diff > 0 ? 'port gate favoured' : 'stbd gate favoured');
   }
 
-  // Course axis
-  if (WW && (lwExists || LW_PORT || LW_STBD)) {
-    const lw = lwExists
-      ? { lat:(LW_PORT.lat+LW_STBD.lat)/2, lon:(LW_PORT.lon+LW_STBD.lon)/2 }
-      : (LW_PORT ?? LW_STBD);
-    const ca = brg(lw.lat, lw.lon, WW.lat, WW.lon);
+  // Course axis — mid start line → WW
+  if (WW && RC && PIN) {
+    const mid = { lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2 };
+    const ca = brg(mid.lat, mid.lon, WW.lat, WW.lon);
     document.getElementById('pc-course-axis').textContent = Math.round(ca) + '°';
-    document.getElementById('pc-course-axis-card').textContent = card(ca) + ' · LW→WW';
+    document.getElementById('pc-course-axis-card').textContent = card(ca) + ' · LINE→WW';
     document.getElementById('pc-course-wind').textContent = Math.round(windDir) + '°';
     document.getElementById('pc-course-wind-sub').textContent = card(windDir);
     const windAngle = angDiff(ca, windDir);
@@ -1150,12 +1155,10 @@ function drawMap() {
     ctx.setLineDash([]);
   }
 
-  // Course axis line (WW ↔ LW midpoint)
-  const lw = LW_PORT && LW_STBD
-    ? { lat:(LW_PORT.lat+LW_STBD.lat)/2, lon:(LW_PORT.lon+LW_STBD.lon)/2 }
-    : (LW_PORT ?? LW_STBD ?? null);
-  if (WW && lw) {
-    const [wx,wy]=toXY(WW.lat,WW.lon), [lx,ly]=toXY(lw.lat,lw.lon);
+  // Course axis line (mid start line → WW)
+  const midLine = RC && PIN ? { lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2 } : null;
+  if (WW && midLine) {
+    const [wx,wy]=toXY(WW.lat,WW.lon), [lx,ly]=toXY(midLine.lat,midLine.lon);
     ctx.strokeStyle = 'rgba(0,229,204,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,6]);
     ctx.beginPath(); ctx.moveTo(wx,wy); ctx.lineTo(lx,ly); ctx.stroke();
     ctx.setLineDash([]);
