@@ -2573,7 +2573,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     // Distance to WW mark at T+50 (smaller = closer to WW = further ahead upwind)
     const distToWW = WWGATE ? hav(p50.lat, p50.lon, WWGATE.lat, WWGATE.lon) : null;
     // Upwind VMG at T+50 window (gun+20s to gun+70s)
-    const vmgPts = track.filter(p=>p.ts>=GUN+20000&&p.ts<=GUN+70000);
+    const vmgPts = t.filter(p=>p.ts>=gunTs+20000&&p.ts<=gunTs+70000);
     const vmgVals = vmgPts.map(p=>{
       const sogKt=(p.sog??0)*0.539957;
       if(sogKt<1) return null;
