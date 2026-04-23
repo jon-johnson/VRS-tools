@@ -605,6 +605,11 @@ const GATE_SNS = {
   LW: [],
   RC_SNS: [28093],
   PIN_SN: 28320,
+  // Fallback positions when SNs go offline mid-event (Porto Cervo 2026)
+  FALLBACK: {
+    28093: {lat: 41.1396016, lon: 9.5567915},
+    28320: {lat: 41.1409885, lon: 9.5539025},
+  }
 };
 
 // Hardcoded mark positions — marks weren't transmitting during the 15:xx races
@@ -1659,12 +1664,12 @@ function rotProj(pts,W,H,px,py){
 // ─── DRAW CATAMARAN (M32 favicon silhouette, 9.68m x 5.54m) ───
 // Matches the favicon: two curved hulls with pointed bow+stern, two crossbeams
 function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
-  // Monohull shape for Cape 31
-  const L = Math.max(6, 22/mpp);   // half-length in pixels
-  const B = Math.max(1.5, 4/mpp);  // half-beam in pixels
+  // Monohull keelboat shape (Cape 31 style)
+  const L = Math.max(4, 11/mpp);   // half-length in pixels (50% of original)
+  const B = Math.max(0.8, 2/mpp);  // half-beam in pixels (50% of original)
 
   const hr = hdgDeg * D2R;
-  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward unit vector
+  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward unit vector (bow)
   const sx =  Math.cos(hr), sy =  Math.sin(hr); // starboard unit vector
 
   // boat-local (fwd, stbd) → canvas (x, y)
@@ -1672,43 +1677,59 @@ function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
 
   ctx.save();
 
-  // Hull: pointed bow, widest at 35% from bow, tapered stern
-  const bow      = bp( L,        0);
-  const fwdStbd  = bp( L*0.55,   B*1.0);
-  const midStbd  = bp( 0,        B*1.0);
-  const aftStbd  = bp(-L*0.6,    B*0.75);
-  const stern    = bp(-L,        0);
-  const aftPort  = bp(-L*0.6,   -B*0.75);
-  const midPort  = bp( 0,       -B*1.0);
-  const fwdPort  = bp( L*0.55,  -B*1.0);
+  // Main hull: sharp bow, widest ~35% aft of bow, taper to narrow stern
+  const bow       = bp( L,       0);       // bow tip
+  const fwdStbd   = bp( L*0.4,   B*0.9);   // flare begins
+  const midStbd   = bp( 0,       B*1.0);   // max beam
+  const aftStbd   = bp(-L*0.55,  B*0.65);  // stern quarter
+  const sternStbd = bp(-L*0.85,  B*0.25);  // stern shoulder stbd
+  const stern     = bp(-L,       0);       // stern centre
+  const sternPort = bp(-L*0.85, -B*0.25);  // stern shoulder port
+  const aftPort   = bp(-L*0.55, -B*0.65);
+  const midPort   = bp( 0,      -B*1.0);
+  const fwdPort   = bp( L*0.4,  -B*0.9);
 
   ctx.beginPath();
   ctx.moveTo(...bow);
   ctx.bezierCurveTo(...fwdStbd, ...fwdStbd, ...midStbd);
-  ctx.bezierCurveTo(...aftStbd, ...aftStbd, ...stern);
+  ctx.bezierCurveTo(...aftStbd, ...aftStbd, ...sternStbd);
+  ctx.lineTo(...stern);
+  ctx.lineTo(...sternPort);
   ctx.bezierCurveTo(...aftPort, ...aftPort, ...midPort);
   ctx.bezierCurveTo(...fwdPort, ...fwdPort, ...bow);
   ctx.closePath();
   ctx.fillStyle = color + 'cc';
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(0.8, B * 0.3);
+  ctx.lineWidth = Math.max(0.6, B * 0.25);
   ctx.fill();
   ctx.stroke();
 
-  // Mast — small circle at ~35% from bow
-  const mast = bp(L * 0.25, 0);
+  // Keel stub — small fin below hull at ~30% from bow aft
+  const keelFwd = bp(-L*0.1,  0);
+  const keelAft = bp(-L*0.3,  0);
+  const keelTip = bp(-L*0.2,  B*0.7);  // keel fin extends to starboard (draft)
   ctx.beginPath();
-  ctx.arc(...mast, Math.max(1, B * 0.35), 0, Math.PI * 2);
+  ctx.moveTo(...keelFwd);
+  ctx.lineTo(...keelTip);
+  ctx.lineTo(...keelAft);
+  ctx.closePath();
+  ctx.fillStyle = color + '88';
+  ctx.fill();
+
+  // Mast position — ~35% from bow
+  const mast = bp(L * 0.3, 0);
+  ctx.beginPath();
+  ctx.arc(...mast, Math.max(0.8, B * 0.3), 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
 
-  // Sail number label
-  const fontSize = Math.max(7, Math.min(13, L * 0.38));
+  // Sail number label — centred on hull
+  const fontSize = Math.max(6, Math.min(11, L * 0.38));
   ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${fontSize}px Orbitron`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, cx, cy);
+  ctx.fillText(label, cx - fx*L*0.1, cy - fy*L*0.1);
 
   ctx.restore();
 }
@@ -2936,7 +2957,7 @@ function renderRacePanel(panelEl, rd){
       <div class="course-card">
         <div class="sh" style="margin-top:0">COURSE OVERVIEW</div>
         <div class="mc" style="flex-shrink:0">
-          <div class="mh">FULL RACE TRACKS · GATES · REACH MARK · COURSE AXIS &nbsp;<span style="color:var(--orange);font-size:8px">✦ CLICK TO PLACE REACH MARK</span></div>
+          <div class="mh">FULL RACE TRACKS · COURSE AXIS &nbsp;</div>
           <canvas id="${cCourseId}"></canvas>
         </div>
       </div>
@@ -2956,7 +2977,7 @@ function renderRacePanel(panelEl, rd){
           ? inf.ocsBoats.map(s=>'<span style="color:var(--red);font-family:Orbitron,monospace;font-size:10px">'+s+'</span>').join(' ')
           : '<span style="color:var(--muted2)">none detected</span>';
         return '<div class="nc" style="margin-bottom:10px">'
-          +'<div class="nt">⬡ REACH MARK INFERENCE</div>'
+          +''
           +'<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:6px">'
             +'<div>'
               +'<div style="font-size:8px;color:var(--muted);letter-spacing:.5px;margin-bottom:2px">SOURCE BOAT</div>'
@@ -3671,8 +3692,8 @@ function drawCourseR(rd){
     ctx.restore();
   }
 
-  // Reach leg: draw from start line midpoint to reach mark
-  if(rm&&MID){
+  // Reach leg: skipped for W/L upwind course
+  if(false&&rm&&MID){
     const[sx,sy]=tP(MID.lat,MID.lon),[rx2,ry2]=tP(rm.lat,rm.lon);
     dline(ctx,sx,sy,rx2,ry2,'rgba(255,140,0,.5)',null,true);
     markRound(ctx,rx2,ry2,'#ff8c00','REACH',5);
@@ -3740,7 +3761,7 @@ function drawCourseR(rd){
     };
     canvasEl._rmClickEnabled = true;
     canvasEl.style.cursor = 'crosshair';
-    canvasEl.title = 'Click to manually place reach mark';
+    // reach mark click disabled for W/L courses
     // Remove old listener if re-rendered
     if(canvasEl._rmClickHandler) canvasEl.removeEventListener('click', canvasEl._rmClickHandler);
     canvasEl._rmClickHandler = (e) => handleReachMarkClick(e, canvasEl);
