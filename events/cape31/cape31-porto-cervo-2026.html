@@ -1637,7 +1637,7 @@ function mkProj(ptsLat,ptsLon,W,H,padH,padV){
 function rotProj(pts,W,H,px,py){
   const cLa=MID.lat,cLo=MID.lon,toM=(la,lo)=>({x:(lo-cLo)*D2R*RE*Math.cos(cLa*D2R),y:(la-cLa)*D2R*RE});
   const rcM=toM(RC.lat,RC.lon),pnM=toM(PIN.lat,PIN.lon);
-  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-(ang-Math.PI/2);
+  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-ang;
   const r=(mx,my)=>({rx:mx*Math.cos(rot)-my*Math.sin(rot),ry:mx*Math.sin(rot)+my*Math.cos(rot)});
   const rcR=r(rcM.x,rcM.y),pnR=r(pnM.x,pnM.y);
   const p2=pts.map(p=>{const m=toM(p.lat,p.lon);return{...p,...r(m.x,m.y)}});
@@ -1659,83 +1659,59 @@ function rotProj(pts,W,H,px,py){
 // ─── DRAW CATAMARAN (M32 favicon silhouette, 9.68m x 5.54m) ───
 // Matches the favicon: two curved hulls with pointed bow+stern, two crossbeams
 function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
-  const halfL=(M32_LEN/2)/mpp;   // half-length in pixels
-  const halfB=(M32_BEAM/2)/mpp;  // half-beam (hull centre to boat centre) in pixels
-  const hw=Math.max(1.5, halfL*0.13); // hull half-width in pixels
+  // Monohull shape for Cape 31
+  const L = Math.max(6, 22/mpp);   // half-length in pixels
+  const B = Math.max(1.5, 4/mpp);  // half-beam in pixels
 
-  const hr=hdgDeg*D2R;
-  // Forward (+bow) and starboard unit vectors in canvas coords
-  const fx= Math.sin(hr), fy=-Math.cos(hr);
-  const sx= Math.cos(hr), sy= Math.sin(hr);
+  const hr = hdgDeg * D2R;
+  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward unit vector
+  const sx =  Math.cos(hr), sy =  Math.sin(hr); // starboard unit vector
 
-  // Helper: boat-local (fwd, stbd) → canvas (x, y)
-  const bp=(f,s)=>[cx+fx*f+sx*s, cy+fy*f+sy*s];
+  // boat-local (fwd, stbd) → canvas (x, y)
+  const bp = (f,s) => [cx + fx*f + sx*s, cy + fy*f + sy*s];
 
   ctx.save();
 
-  // Draw one hull given sign: +1=stbd, -1=port
-  function drawHull(sign){
-    const hc=halfB*sign; // hull centre lateral offset
-    // Hull shape: pointed bow & stern, curved outer edge, straighter inner edge
-    // Points in (fwd, lateral) boat coords:
-    // bow tip, outer bow shoulder, outer mid, outer stern shoulder, stern tip,
-    // inner stern shoulder, inner mid, inner bow shoulder → back to bow tip
-    const bow  = bp( halfL,       hc);
-    const oBS  = bp( halfL*0.75,  hc + hw*sign*1.4);  // outer bow shoulder
-    const oMid = bp( 0,           hc + hw*sign*1.6);  // outer mid (widest)
-    const oSS  = bp(-halfL*0.75,  hc + hw*sign*1.4);  // outer stern shoulder
-    const stern= bp(-halfL,       hc);
-    const iSS  = bp(-halfL*0.75,  hc + hw*sign*0.5);  // inner stern shoulder
-    const iMid = bp( 0,           hc + hw*sign*0.5);  // inner mid
-    const iBS  = bp( halfL*0.75,  hc + hw*sign*0.5);  // inner bow shoulder
+  // Hull: pointed bow, widest at 35% from bow, tapered stern
+  const bow      = bp( L,        0);
+  const fwdStbd  = bp( L*0.55,   B*1.0);
+  const midStbd  = bp( 0,        B*1.0);
+  const aftStbd  = bp(-L*0.6,    B*0.75);
+  const stern    = bp(-L,        0);
+  const aftPort  = bp(-L*0.6,   -B*0.75);
+  const midPort  = bp( 0,       -B*1.0);
+  const fwdPort  = bp( L*0.55,  -B*1.0);
 
-    ctx.beginPath();
-    ctx.moveTo(...bow);
-    ctx.bezierCurveTo(...oBS, ...oBS, ...oMid);
-    ctx.bezierCurveTo(...oSS, ...oSS, ...stern);
-    ctx.lineTo(...iSS);
-    ctx.bezierCurveTo(...iMid, ...iMid, ...iBS);
-    ctx.closePath();
+  ctx.beginPath();
+  ctx.moveTo(...bow);
+  ctx.bezierCurveTo(...fwdStbd, ...fwdStbd, ...midStbd);
+  ctx.bezierCurveTo(...aftStbd, ...aftStbd, ...stern);
+  ctx.bezierCurveTo(...aftPort, ...aftPort, ...midPort);
+  ctx.bezierCurveTo(...fwdPort, ...fwdPort, ...bow);
+  ctx.closePath();
+  ctx.fillStyle = color + 'cc';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(0.8, B * 0.3);
+  ctx.fill();
+  ctx.stroke();
 
-    ctx.fillStyle=color+'cc';
-    ctx.strokeStyle=color;
-    ctx.lineWidth=Math.max(0.8,hw*0.3);
-    ctx.fill();
-    ctx.stroke();
-  }
+  // Mast — small circle at ~35% from bow
+  const mast = bp(L * 0.25, 0);
+  ctx.beginPath();
+  ctx.arc(...mast, Math.max(1, B * 0.35), 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
 
-  drawHull(1);   // starboard hull
-  drawHull(-1);  // port hull
-
-  // Crossbeams — two rectangular bars connecting the hulls
-  // Forward beam: at 55% of half-length toward bow
-  // Aft beam: at 55% of half-length toward stern
-  const beamW=Math.max(1, hw*0.55); // beam thickness
-  [[0.52], [-0.52]].forEach(([f])=>{
-    const p1=bp(halfL*f, -halfB+hw*0.5);
-    const p2=bp(halfL*f,  halfB-hw*0.5);
-    ctx.save();
-    ctx.strokeStyle=color+'dd';
-    ctx.lineWidth=beamW*2;
-    ctx.lineCap='butt';
-    ctx.beginPath();
-    ctx.moveTo(...p1);
-    ctx.lineTo(...p2);
-    ctx.stroke();
-    ctx.restore();
-  });
-
-  // Sail number label in trampoline centre
-  const fontSize=Math.max(7, Math.min(14, halfL*0.38));
-  ctx.fillStyle='#ffffff';
-  ctx.font=`bold ${fontSize}px Orbitron`;
-  ctx.textAlign='center';
-  ctx.textBaseline='middle';
+  // Sail number label
+  const fontSize = Math.max(7, Math.min(13, L * 0.38));
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${fontSize}px Orbitron`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   ctx.fillText(label, cx, cy);
 
   ctx.restore();
 }
-
 
 function drawSL(ctx,rx,ry,px,py,dim){
   const a=dim?0.35:1;
@@ -1908,7 +1884,7 @@ function drawT50(rm){
     const cLa=MID.lat,cLo=MID.lon;
     const toM2=(la,lo)=>({x:(lo-cLo)*D2R*RE*Math.cos(cLa*D2R),y:(la-cLa)*D2R*RE});
     const rcM=toM2(RC.lat,RC.lon),pnM=toM2(PIN.lat,PIN.lon);
-    const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot2=-(ang-Math.PI/2);
+    const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot2=-ang;
     const rr=(mx,my)=>({rx:mx*Math.cos(rot2)-my*Math.sin(rot2),ry:mx*Math.sin(rot2)+my*Math.cos(rot2)});
     const rmM=toM2(rm.lat,rm.lon);
     const rmR=rr(rmM.x,rmM.y);
@@ -3188,7 +3164,7 @@ function drawGunR(rd){
   const cLa=MID.lat,cLo=MID.lon;
   const toM=(la,lo)=>({x:(lo-cLo)*D2R*RE*Math.cos(cLa*D2R),y:(la-cLa)*D2R*RE});
   const rcM=toM(RC.lat,RC.lon),pnM=toM(PIN.lat,PIN.lon);
-  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-(ang-Math.PI/2);
+  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-ang;
   const r=(mx,my)=>({rx:mx*Math.cos(rot)-my*Math.sin(rot),ry:mx*Math.sin(rot)+my*Math.cos(rot)});
   const rcR=r(rcM.x,rcM.y),pnR=r(pnM.x,pnM.y);
   const p2=GUND.map(p=>{const m=toM(p.lat,p.lon);return{...p,...r(m.x,m.y)}});
@@ -3411,7 +3387,7 @@ function buildStartReplayGeom(rd){
   const cLa=MID.lat,cLo=MID.lon;
   const toM=(la,lo)=>({x:(lo-cLo)*D2R*RE*Math.cos(cLa*D2R),y:(la-cLa)*D2R*RE});
   const rcM=toM(RC.lat,RC.lon), pnM=toM(PIN.lat,PIN.lon);
-  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x), rot=-(ang-Math.PI/2);
+  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x), rot=-ang;
   const r=(mx,my)=>({rx:mx*Math.cos(rot)-my*Math.sin(rot),ry:mx*Math.sin(rot)+my*Math.cos(rot)});
   const rcR=r(rcM.x,rcM.y), pnR=r(pnM.x,pnM.y);
   const sampleXs=[rcR.rx,pnR.rx], sampleYs=[rcR.ry,pnR.ry];
@@ -3558,7 +3534,7 @@ function drawT50R(rd){
   const cLa=MID.lat,cLo=MID.lon;
   const toM=(la,lo)=>({x:(lo-cLo)*D2R*RE*Math.cos(cLa*D2R),y:(la-cLa)*D2R*RE});
   const rcM=toM(RC.lat,RC.lon),pnM=toM(PIN.lat,PIN.lon);
-  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-(ang-Math.PI/2);
+  const ang=Math.atan2(rcM.y-pnM.y,rcM.x-pnM.x),rot=-ang;
   const r=(mx,my)=>({rx:mx*Math.cos(rot)-my*Math.sin(rot),ry:mx*Math.sin(rot)+my*Math.cos(rot)});
   const rcR=r(rcM.x,rcM.y),pnR=r(pnM.x,pnM.y);
   const p2=T50.map(p=>{const m=toM(p.lat,p.lon);return{...p,...r(m.x,m.y)}});
