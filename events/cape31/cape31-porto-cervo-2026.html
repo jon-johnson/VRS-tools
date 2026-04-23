@@ -604,20 +604,10 @@ const GATE_SNS = {
   WW: [],
   LW: [],
   RC_SNS: [28093],
-  PIN_SN: 28320,
-  // Fallback positions when SNs go offline mid-event (Porto Cervo 2026)
-  FALLBACK: {
-    28093: {lat: 41.1396016, lon: 9.5567915},
-    28320: {lat: 41.1409885, lon: 9.5539025},
-  }
+  PIN_SN: 28320
 };
 
-// Hardcoded mark positions — marks weren't transmitting during the 15:xx races
-// Positions derived from earlier session data (same physical marks)
-const HARDCODED_MARKS = {
-  RC:  { lat: 41.1350774, lon: 9.5262337 },  // SN 27844
-  PIN: { lat: 41.1350755, lon: 9.5260362 },  // SN 27947
-};
+// No hardcoded mark positions — auto-detected from telemetry
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║              END OF CONFIGURATION                                ║
 // ╚══════════════════════════════════════════════════════════════════╝
@@ -1664,72 +1654,63 @@ function rotProj(pts,W,H,px,py){
 // ─── DRAW CATAMARAN (M32 favicon silhouette, 9.68m x 5.54m) ───
 // Matches the favicon: two curved hulls with pointed bow+stern, two crossbeams
 function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
-  // Monohull keelboat shape (Cape 31 style)
-  const L = Math.max(4, 11/mpp);   // half-length in pixels (50% of original)
-  const B = Math.max(0.8, 2/mpp);  // half-beam in pixels (50% of original)
+  // Cape 31 plan view — sharp bow, max beam ~55% from bow, wide transom
+  const L = Math.max(5, 14/mpp);   // half-length in pixels
+  const B = Math.max(1, 2.8/mpp);  // half-max-beam in pixels
 
   const hr = hdgDeg * D2R;
-  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward unit vector (bow)
-  const sx =  Math.cos(hr), sy =  Math.sin(hr); // starboard unit vector
+  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward = bow direction
+  const sx =  Math.cos(hr), sy =  Math.sin(hr); // starboard
 
-  // boat-local (fwd, stbd) → canvas (x, y)
+  // (fwd, stbd) → canvas
   const bp = (f,s) => [cx + fx*f + sx*s, cy + fy*f + sy*s];
 
   ctx.save();
 
-  // Main hull: sharp bow, widest ~35% aft of bow, taper to narrow stern
-  const bow       = bp( L,       0);       // bow tip
-  const fwdStbd   = bp( L*0.4,   B*0.9);   // flare begins
-  const midStbd   = bp( 0,       B*1.0);   // max beam
-  const aftStbd   = bp(-L*0.55,  B*0.65);  // stern quarter
-  const sternStbd = bp(-L*0.85,  B*0.25);  // stern shoulder stbd
-  const stern     = bp(-L,       0);       // stern centre
-  const sternPort = bp(-L*0.85, -B*0.25);  // stern shoulder port
-  const aftPort   = bp(-L*0.55, -B*0.65);
-  const midPort   = bp( 0,      -B*1.0);
-  const fwdPort   = bp( L*0.4,  -B*0.9);
+  // Hull outline — bow at +L (forward), stern at -L
+  // Bow: very sharp point
+  // Widens quickly: by 20% from bow already at 70% beam
+  // Max beam at ~10% aft of midship (= fwd 0.1)
+  // Stern: wide transom, ~75% of max beam
+  const bow        = bp( L,         0    );
+  const bowStbd    = bp( L*0.75,    B*0.55);  // hull starts widening fast
+  const fwdStbd    = bp( L*0.35,    B*0.95);  // approaching max beam
+  const midStbd    = bp( L*0.05,    B*1.0 );  // max beam point
+  const aftStbd    = bp(-L*0.45,    B*0.95);  // still wide past mid
+  const transStbd  = bp(-L*0.85,    B*0.78);  // transom shoulder
+  const sternStbd  = bp(-L,         B*0.72);  // transom stbd corner
+  const sternPort  = bp(-L,        -B*0.72);  // transom port corner
+  const transPort  = bp(-L*0.85,   -B*0.78);
+  const aftPort    = bp(-L*0.45,   -B*0.95);
+  const midPort    = bp( L*0.05,   -B*1.0 );
+  const fwdPort    = bp( L*0.35,   -B*0.95);
+  const bowPort    = bp( L*0.75,   -B*0.55);
 
   ctx.beginPath();
   ctx.moveTo(...bow);
-  ctx.bezierCurveTo(...fwdStbd, ...fwdStbd, ...midStbd);
-  ctx.bezierCurveTo(...aftStbd, ...aftStbd, ...sternStbd);
-  ctx.lineTo(...stern);
+  ctx.bezierCurveTo(...bowStbd, ...bowStbd, ...fwdStbd);
+  ctx.bezierCurveTo(...midStbd, ...midStbd, ...aftStbd);
+  ctx.bezierCurveTo(...transStbd, ...transStbd, ...sternStbd);
   ctx.lineTo(...sternPort);
-  ctx.bezierCurveTo(...aftPort, ...aftPort, ...midPort);
-  ctx.bezierCurveTo(...fwdPort, ...fwdPort, ...bow);
+  ctx.bezierCurveTo(...transPort, ...transPort, ...aftPort);
+  ctx.bezierCurveTo(...midPort, ...midPort, ...fwdPort);
+  ctx.bezierCurveTo(...bowPort, ...bowPort, ...bow);
   ctx.closePath();
+
   ctx.fillStyle = color + 'cc';
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(0.6, B * 0.25);
+  ctx.lineWidth = Math.max(0.5, B * 0.2);
   ctx.fill();
   ctx.stroke();
 
-  // Keel stub — small fin below hull at ~30% from bow aft
-  const keelFwd = bp(-L*0.1,  0);
-  const keelAft = bp(-L*0.3,  0);
-  const keelTip = bp(-L*0.2,  B*0.7);  // keel fin extends to starboard (draft)
-  ctx.beginPath();
-  ctx.moveTo(...keelFwd);
-  ctx.lineTo(...keelTip);
-  ctx.lineTo(...keelAft);
-  ctx.closePath();
-  ctx.fillStyle = color + '88';
-  ctx.fill();
-
-  // Mast position — ~35% from bow
-  const mast = bp(L * 0.3, 0);
-  ctx.beginPath();
-  ctx.arc(...mast, Math.max(0.8, B * 0.3), 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-
-  // Sail number label — centred on hull
-  const fontSize = Math.max(6, Math.min(11, L * 0.38));
+  // Sail number label — in middle of hull
+  const fontSize = Math.max(5, Math.min(10, L * 0.35));
   ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${fontSize}px Orbitron`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label, cx - fx*L*0.1, cy - fy*L*0.1);
+  // Offset label slightly toward bow from centre
+  ctx.fillText(label, cx + fx*L*0.08, cy + fy*L*0.08);
 
   ctx.restore();
 }
@@ -2444,9 +2425,54 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   }
   if(markPos[GATE_SNS.PIN_SN]) PIN = markPos[GATE_SNS.PIN_SN];
 
-  // Fallback 1: use hardcoded mark positions if telemetry marks missing
-  if(!RC && typeof HARDCODED_MARKS !== 'undefined' && HARDCODED_MARKS.RC)  RC  = HARDCODED_MARKS.RC;
-  if(!PIN && typeof HARDCODED_MARKS !== 'undefined' && HARDCODED_MARKS.PIN) PIN = HARDCODED_MARKS.PIN;
+  // Fallback 1: (hardcoded marks removed — auto-select from telemetry)
+
+  // Smart start line auto-detection:
+  // If RC or PIN missing from configured SNs, find the best pair from ALL
+  // detected marks: pair closest to fleet at gun, axis most perpendicular to wind.
+  if(!RC || !PIN){
+    const fleetPts = [];
+    for(const [,t] of Object.entries(tracks)){
+      const p = t.find(p=>Math.abs(p.ts-gunTs)<10000);
+      if(p) fleetPts.push(p);
+    }
+    if(fleetPts.length >= 3){
+      const cLat = fleetPts.reduce((a,b)=>a+b.lat,0)/fleetPts.length;
+      const cLon = fleetPts.reduce((a,b)=>a+b.lon,0)/fleetPts.length;
+      const markKeys = Object.keys(markPos);
+      // Score each pair: minimize (avg dist to fleet) + penalize deviation from perpendicular to wind
+      const windDir = (WF ?? 0) * D2R;
+      const perpBrg = (windDir + Math.PI/2 + 2*Math.PI) % (2*Math.PI); // perpendicular to wind
+      let bestScore = Infinity, bestRC = null, bestPIN = null;
+      for(let i=0;i<markKeys.length;i++){
+        for(let j=i+1;j<markKeys.length;j++){
+          const m1=markPos[markKeys[i]], m2=markPos[markKeys[j]];
+          const dist1=hav(cLat,cLon,m1.lat,m1.lon), dist2=hav(cLat,cLon,m2.lat,m2.lon);
+          const avgDist=(dist1+dist2)/2;
+          if(avgDist>2000) continue; // ignore marks >2km from fleet
+          const lineDist=hav(m1.lat,m1.lon,m2.lat,m2.lon);
+          if(lineDist<20||lineDist>600) continue; // ignore too short/long lines
+          // Bearing of line
+          const dLon=(m2.lon-m1.lon)*D2R;
+          const y=Math.sin(dLon)*Math.cos(m2.lat*D2R);
+          const x=Math.cos(m1.lat*D2R)*Math.sin(m2.lat*D2R)-Math.sin(m1.lat*D2R)*Math.cos(m2.lat*D2R)*Math.cos(dLon);
+          const lineBrg=Math.atan2(y,x);
+          // Deviation from perpendicular to wind (smaller = more square)
+          const angDev = Math.min(
+            Math.abs(lineBrg-perpBrg),
+            Math.abs(lineBrg-perpBrg+Math.PI),
+            Math.abs(lineBrg-perpBrg-Math.PI)
+          );
+          const score = avgDist * 0.5 + angDev * 200;
+          if(score<bestScore){ bestScore=score; bestRC=markKeys[i]; bestPIN=markKeys[j]; }
+        }
+      }
+      if(bestRC && bestPIN){
+        if(!RC) RC = markPos[bestRC];
+        if(!PIN) PIN = markPos[bestPIN];
+      }
+    }
+  }
 
   // Fallback 2: infer gates from tracks if marks missing
   if(!WWGATE || !LWGATE){
@@ -3632,10 +3658,11 @@ function drawCourseR(rd){
     THETA = _axisBrg * Math.PI / 180;
     cLat=(WWGATE.lat+LWGATE.lat)/2; cLon=(WWGATE.lon+LWGATE.lon)/2;
   } else {
-    // Fallback when gates unknown: orient so upwind is toward top.
-    // Use wind direction if available, else start line perpendicular.
-    const upwindBrg = WF != null ? WF : (RC && PIN ? brg(RC.lat,RC.lon,PIN.lat,PIN.lon) : 0);
-    THETA = upwindBrg * Math.PI / 180;
+    // Fallback when gates unknown: orient so start line runs vertically
+    // with fleet on the left (upwind to the right = course going right).
+    // Add PI/2 to rotate 90° clockwise vs the standard upwind-at-top orientation.
+    const upwindBrg = WF != null ? WF : (RC && PIN ? (brg(RC.lat,RC.lon,PIN.lat,PIN.lon)+90)%360 : 0);
+    THETA = (upwindBrg + 90) * Math.PI / 180;
     cLat = MID ? MID.lat : (RC ? RC.lat : 0);
     cLon = MID ? MID.lon : (RC ? RC.lon : 0);
   }
@@ -3752,21 +3779,7 @@ function drawCourseR(rd){
    ctx.fillStyle='rgba(0,204,255,.7)';ctx.font='7px Orbitron';ctx.textAlign='center';ctx.textBaseline='middle';
    ctx.fillText('N',nx+Math.sin(na)*(nl+7),ny-Math.cos(na)*(nl+7));ctx.restore();}
 
-  // Store transform params on canvas for click-to-place reach mark
-  const canvasEl = document.getElementById(raceDomId(rd,'cCourse'));
-  if(canvasEl){
-    canvasEl._rmTransform = {
-      cLat, cLon, THETA, mnX, mnY, scale, offX, offY, W, H,
-      raceNum, rd
-    };
-    canvasEl._rmClickEnabled = true;
-    canvasEl.style.cursor = 'crosshair';
-    // reach mark click disabled for W/L courses
-    // Remove old listener if re-rendered
-    if(canvasEl._rmClickHandler) canvasEl.removeEventListener('click', canvasEl._rmClickHandler);
-    canvasEl._rmClickHandler = (e) => handleReachMarkClick(e, canvasEl);
-    canvasEl.addEventListener('click', canvasEl._rmClickHandler);
-  }
+  // Click-to-place reach mark removed for W/L courses
 
   // Legend
   Object.keys(tracks).slice(0,8).forEach((s,i)=>{ctx.save();ctx.strokeStyle=(COL[s]||'#888')+'90';ctx.lineWidth=2;
