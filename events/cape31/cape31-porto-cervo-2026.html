@@ -1654,63 +1654,78 @@ function rotProj(pts,W,H,px,py){
 // ─── DRAW CATAMARAN (M32 favicon silhouette, 9.68m x 5.54m) ───
 // Matches the favicon: two curved hulls with pointed bow+stern, two crossbeams
 function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
-  // Cape 31 plan view — sharp bow, max beam ~55% from bow, wide transom
-  const L = Math.max(5, 14/mpp);   // half-length in pixels
-  const B = Math.max(1, 2.8/mpp);  // half-max-beam in pixels
+  // Cape 31 plan-view: elongated sharp bow, max beam ~55% aft of bow, wide flat transom
+  // Based on actual boat plan — like a stretched teardrop with flat stern
+  const L = Math.max(4, 11/mpp);    // half-length in pixels
+  const B = Math.max(0.8, 2/mpp);   // half-beam in pixels
 
   const hr = hdgDeg * D2R;
-  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward = bow direction
+  const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward (bow direction)
   const sx =  Math.cos(hr), sy =  Math.sin(hr); // starboard
 
-  // (fwd, stbd) → canvas
   const bp = (f,s) => [cx + fx*f + sx*s, cy + fy*f + sy*s];
 
   ctx.save();
 
-  // Hull outline — bow at +L (forward), stern at -L
-  // Bow: very sharp point
-  // Widens quickly: by 20% from bow already at 70% beam
-  // Max beam at ~10% aft of midship (= fwd 0.1)
-  // Stern: wide transom, ~75% of max beam
-  const bow        = bp( L,         0    );
-  const bowStbd    = bp( L*0.75,    B*0.55);  // hull starts widening fast
-  const fwdStbd    = bp( L*0.35,    B*0.95);  // approaching max beam
-  const midStbd    = bp( L*0.05,    B*1.0 );  // max beam point
-  const aftStbd    = bp(-L*0.45,    B*0.95);  // still wide past mid
-  const transStbd  = bp(-L*0.85,    B*0.78);  // transom shoulder
-  const sternStbd  = bp(-L,         B*0.72);  // transom stbd corner
-  const sternPort  = bp(-L,        -B*0.72);  // transom port corner
-  const transPort  = bp(-L*0.85,   -B*0.78);
-  const aftPort    = bp(-L*0.45,   -B*0.95);
-  const midPort    = bp( L*0.05,   -B*1.0 );
-  const fwdPort    = bp( L*0.35,   -B*0.95);
-  const bowPort    = bp( L*0.75,   -B*0.55);
+  // Hull outline (plan view, bow = +fwd):
+  // Bow: very fine point, narrow entry
+  // Widest section: ~45% back from bow (55% from stern)
+  // Stern: wide, nearly flat transom
+  const bow        = bp( L,        0);          // bow tip — fine point
+  const entryStbd  = bp( L*0.7,    B*0.3);      // narrow entry
+  const shoulderS  = bp( L*0.2,    B*1.0);      // max beam, fwd of midship
+  const quarterS   = bp(-L*0.35,   B*1.0);      // parallel section
+  const transSS    = bp(-L*0.75,   B*0.95);     // transom shoulder stbd
+  const transS     = bp(-L,        B*0.8);      // transom stbd corner
+  const transP     = bp(-L,       -B*0.8);      // transom port corner
+  const transPS    = bp(-L*0.75,  -B*0.95);     // transom shoulder port
+  const quarterP   = bp(-L*0.35,  -B*1.0);
+  const shoulderP  = bp( L*0.2,   -B*1.0);
+  const entryPort  = bp( L*0.7,   -B*0.3);
 
   ctx.beginPath();
   ctx.moveTo(...bow);
-  ctx.bezierCurveTo(...bowStbd, ...bowStbd, ...fwdStbd);
-  ctx.bezierCurveTo(...midStbd, ...midStbd, ...aftStbd);
-  ctx.bezierCurveTo(...transStbd, ...transStbd, ...sternStbd);
-  ctx.lineTo(...sternPort);
-  ctx.bezierCurveTo(...transPort, ...transPort, ...aftPort);
-  ctx.bezierCurveTo(...midPort, ...midPort, ...fwdPort);
-  ctx.bezierCurveTo(...bowPort, ...bowPort, ...bow);
+  ctx.bezierCurveTo(...entryStbd, ...entryStbd, ...shoulderS);
+  ctx.lineTo(...quarterS);
+  ctx.bezierCurveTo(...transSS, ...transSS, ...transS);
+  ctx.lineTo(...transP);
+  ctx.bezierCurveTo(...transPS, ...transPS, ...quarterP);
+  ctx.lineTo(...shoulderP);
+  ctx.bezierCurveTo(...entryPort, ...entryPort, ...bow);
   ctx.closePath();
 
   ctx.fillStyle = color + 'cc';
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(0.5, B * 0.2);
+  ctx.lineWidth = Math.max(0.6, B * 0.2);
   ctx.fill();
   ctx.stroke();
 
-  // Sail number label — in middle of hull
-  const fontSize = Math.max(5, Math.min(10, L * 0.35));
+  // Keel fin — centred, aft of max beam, small stub
+  const keelRoot1 = bp(-L*0.1,  0);
+  const keelRoot2 = bp(-L*0.45, 0);
+  const keelTip   = bp(-L*0.28, B*0.6);
+  ctx.beginPath();
+  ctx.moveTo(...keelRoot1);
+  ctx.lineTo(...keelTip);
+  ctx.lineTo(...keelRoot2);
+  ctx.closePath();
+  ctx.fillStyle = color + '77';
+  ctx.fill();
+
+  // Mast dot at ~40% from bow
+  const mast = bp(L * 0.28, 0);
+  ctx.beginPath();
+  ctx.arc(...mast, Math.max(0.7, B * 0.28), 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // Sail number — sit slightly aft of mast
+  const fontSize = Math.max(6, Math.min(11, L * 0.40));
   ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${fontSize}px Orbitron`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // Offset label slightly toward bow from centre
-  ctx.fillText(label, cx + fx*L*0.08, cy + fy*L*0.08);
+  ctx.fillText(label, cx - fx*L*0.08, cy - fy*L*0.08);
 
   ctx.restore();
 }
@@ -2418,12 +2433,56 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     LWGATE = {lat:(LW_A.lat+LW_B.lat)/2, lon:(LW_A.lon+LW_B.lon)/2};
   }
   
-  // RC and PIN
+  // RC and PIN identification
+  // Primary: use configured SNs from GATE_SNS
   let RC, PIN;
   for(const sn of GATE_SNS.RC_SNS){
     if(markPos[sn]){ RC = markPos[sn]; break; }
   }
   if(markPos[GATE_SNS.PIN_SN]) PIN = markPos[GATE_SNS.PIN_SN];
+
+  // Fallback: if either mark missing, find the best pair automatically.
+  // Best pair = two stationary marks closest to fleet centroid at gun,
+  // whose axis is most perpendicular to upwind direction.
+  if(!RC || !PIN){
+    const allSNs = Object.keys(markPos);
+    if(allSNs.length >= 2){
+      // Fleet centroid at gun time
+      let cLats=[], cLons=[];
+      for(const [,t] of Object.entries(tracks)){
+        const p = t.find(p=>Math.abs(p.ts-gunTs)<10000);
+        if(p){cLats.push(p.lat);cLons.push(p.lon);}
+      }
+      const cLat=cLats.reduce((a,b)=>a+b,0)/(cLats.length||1);
+      const cLon=cLons.reduce((a,b)=>a+b,0)/(cLons.length||1);
+
+      // Wind direction estimate — use WF if available, else 0
+      const windEst = (typeof WF === 'number' && WF != null) ? WF : 0;
+      const perpIdeal = (windEst + 90 + 360) % 360; // ideal line axis
+
+      let bestScore = Infinity, bestRC = null, bestPIN = null;
+      for(let i=0;i<allSNs.length;i++){
+        for(let j=i+1;j<allSNs.length;j++){
+          const m1=markPos[allSNs[i]], m2=markPos[allSNs[j]];
+          const midLat=(m1.lat+m2.lat)/2, midLon=(m1.lon+m2.lon)/2;
+          const distToFleet=hav(cLat,cLon,midLat,midLon);
+          const lineAxis=brg(m1.lat,m1.lon,m2.lat,m2.lon);
+          const degOff=Math.min(Math.abs(lineAxis-perpIdeal)%180, 180-Math.abs(lineAxis-perpIdeal)%180);
+          // Score: prioritise close to fleet, then square to wind
+          const score = distToFleet * 0.5 + degOff * 15;
+          if(score < bestScore){
+            bestScore=score;
+            // RC = the mark closer to NE (upwind end typical for RC)
+            bestRC = m1.lat > m2.lat ? markPos[allSNs[i]] : markPos[allSNs[j]];
+            bestPIN = m1.lat > m2.lat ? markPos[allSNs[j]] : markPos[allSNs[i]];
+          }
+        }
+      }
+      if(!RC && bestRC) RC = bestRC;
+      if(!PIN && bestPIN) PIN = bestPIN;
+      console.log('Auto mark detection: score='+bestScore?.toFixed(0)+' RC='+RC?.lat?.toFixed(4)+' PIN='+PIN?.lat?.toFixed(4));
+    }
+  }
 
   // Fallback 1: (hardcoded marks removed — auto-select from telemetry)
 
@@ -3655,7 +3714,7 @@ function drawCourseR(rd){
     // The rot() function maps the LW→WW direction onto +ry (= top of canvas via tY flip).
     // This guarantees WW is always at the top of the course map regardless of compass heading.
     const _axisBrg = brg(LWGATE.lat,LWGATE.lon,WWGATE.lat,WWGATE.lon);
-    THETA = _axisBrg * Math.PI / 180;
+    THETA = _axisBrg * Math.PI / 180 - Math.PI / 2; // rotated 90° CW: WW to the right
     cLat=(WWGATE.lat+LWGATE.lat)/2; cLon=(WWGATE.lon+LWGATE.lon)/2;
   } else {
     // Fallback when gates unknown: orient so start line runs vertically
@@ -3682,8 +3741,9 @@ function drawCourseR(rd){
   const rawSpanX=Math.max(...rk.map(p=>p[0]))-Math.min(...rk.map(p=>p[0]));
   const rawSpanY=Math.max(...rk.map(p=>p[1]))-Math.min(...rk.map(p=>p[1]));
   // Canvas: portrait orientation; compute from actual track extent
-  const CANVAS_W = 440;
-  const CANVAS_H = Math.max(500, Math.min(1100, Math.round(CANVAS_W * (rawSpanY/Math.max(rawSpanX,1)) + 80)));
+  // Landscape orientation for upwind course (wide, not tall)
+  const CANVAS_W = 900;
+  const CANVAS_H = Math.max(280, Math.min(500, Math.round(CANVAS_W * (rawSpanY/Math.max(rawSpanX,1)) + 80)));
   const mnX=Math.min(...rk.map(p=>p[0]))-50,mxX=Math.max(...rk.map(p=>p[0]))+50;
   const mnY=Math.min(...rk.map(p=>p[1]))-50,mxY=Math.max(...rk.map(p=>p[1]))+50;
   const{ctx,W,H}=cvs(raceDomId(rd,'cCourse'),CANVAS_H);cbg(ctx,W,H);
@@ -4777,79 +4837,6 @@ function selectRace(event, di, raceNum, guns, ri){
 // ══════════════════════════════════════════════════════════════════
 //  BOOTSTRAP
 // ══════════════════════════════════════════════════════════════════
-// ── REACH MARK CLICK HANDLER ──
-function handleReachMarkClick(e, canvasEl){
-  const tr = canvasEl._rmTransform;
-  if(!tr) return;
-  const {cLat, cLon, THETA, mnX, mnY, scale, offX, offY, W, H, raceNum, rd} = tr;
-
-  // Get click position relative to canvas (accounting for CSS scaling)
-  const rect = canvasEl.getBoundingClientRect();
-  const cssX = e.clientX - rect.left;
-  const cssY = e.clientY - rect.top;
-  // Canvas logical coords
-  const px = cssX * (W / rect.width);
-  const py = cssY * (H / rect.height);
-
-  // Inverse tX/tY → rotated metres
-  const rx = (px - offX) / scale + mnX;
-  const ry = (H - offY - py) / scale + mnY;
-
-  // Inverse rotation (un-rotate by -THETA = rotate by THETA)
-  const cosT = Math.cos(-THETA), sinT = Math.sin(-THETA);
-  const mx = rx * cosT - ry * sinT;
-  const my = rx * sinT + ry * cosT;
-
-  // Inverse projection → lat/lon
-  const lat = cLat + my / (D2R * RE);
-  const lon = cLon + mx / (D2R * RE * Math.cos(cLat * D2R));
-
-  // Update reach mark on raceData
-  const t_s = 50; // keep nominal T+50 label
-  rd.rm = { lat, lon, boat_lat: lat, boat_lon: lon, ts: rd.gunTs + 50000, t_s, manual: true };
-
-  // Flash feedback on canvas
-  const ctx = canvasEl.getContext('2d');
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,140,0,0.25)';
-  ctx.beginPath(); ctx.arc(px, py, 18, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
-
-  // Re-render race views that depend on the reach mark, including the AT GUN optimizer.
-  const panelEl = document.getElementById(`racePanel${rd._dayIdx}_${raceNum}`);
-  if(panelEl){
-    const saved = saveGlobals();
-    setGlobals(rd);
-    window.GUN = rd.gunTs;
-    try {
-      // Recompute mark-dependent stats first so the start optimizer uses fresh inputs.
-      recomputeL1(rd);
-      renderL1R(rd);
-      if(rd.T50.length && rd.RC && rd.PIN) drawT50R(rd);
-      if(rd.GUND && rd.GUND.length && rd.RC && rd.PIN) drawGunR(rd);
-      if(rd.RC && rd.PIN) initStartReplayR(rd);
-      drawCourseR(rd);
-    } finally { restoreGlobals(saved); }
-  }
-
-  // Update leg length and TWA in the strip and geometry bar
-  if(rd.PIN){
-    const rlDist = Math.round(hav(rd.PIN.lat, rd.PIN.lon, lat, lon));
-    const rlB = brg(rd.PIN.lat, rd.PIN.lon, lat, lon);
-    const twa = rd.WF != null ? Math.abs(((rlB - rd.WF + 180 + 360)%360)-180) : null;
-    const scElems = document.querySelectorAll(`#racePanel${rd._dayIdx}_${raceNum} .sc`);
-    // Update REACH LEG in strip
-    scElems.forEach(sc => {
-      if(sc.querySelector('.sl')?.textContent === 'REACH LEG'){
-        sc.querySelector('.sv').textContent = rlDist + 'm' + (twa!=null ? ' · ' + twa.toFixed(0)+'°' : '');
-      }
-    });
-  }
-  // Show confirmation toast
-  const rlDistShow = rd.PIN ? Math.round(hav(rd.PIN.lat, rd.PIN.lon, lat, lon)) : '?';
-  showToast(`Reach mark placed · leg ${rlDistShow}m from pin`);
-}
-
 function recomputeL1(rd){
   // Rank by distance from PIN at T+50 — same logic as loadRace, no mark detection needed.
   const {tracks, gunTs, PIN} = rd;
