@@ -2394,21 +2394,26 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     } else if(type === 'mark'){
       const sn = row[1];
       const ts = row[0];
-      // Use mark positions within 3 min before gun to 30s after
-      // Wider window catches marks that reported infrequently between races
-      if(ts >= gunTs - 180000 && ts <= gunTs + 30000){
-        if(!markAcc[sn]) markAcc[sn] = {lats:[], lons:[]};
-        markAcc[sn].lats.push(row[8]);
-        markAcc[sn].lons.push(row[9]);
-      }
+      // Use mark positions from entire fetch window — some marks go offline
+      // before gun time so we need the widest possible window.
+      // Filter to stationary marks: low spread = anchored (not being towed)
+      if(!markAcc[sn]) markAcc[sn] = {lats:[], lons:[], ts:[]};
+      markAcc[sn].lats.push(row[8]);
+      markAcc[sn].lons.push(row[9]);
+      markAcc[sn].ts.push(ts);
     }
   }
 
-  // Average mark positions at gun time
+  // Median mark positions — use median to reject outliers from towing
+  // Ignore marks with spread > 50m (being towed = not a fixed start line mark)
   for(const [sn, acc] of Object.entries(markAcc)){
+    const lats = [...acc.lats].sort((a,b)=>a-b);
+    const lons = [...acc.lons].sort((a,b)=>a-b);
+    const spread = (lats[lats.length-1] - lats[0]) * 111320;
+    if(spread > 50) continue; // skip moving marks
     markPos[sn] = {
-      lat: acc.lats.reduce((a,b)=>a+b,0)/acc.lats.length,
-      lon: acc.lons.reduce((a,b)=>a+b,0)/acc.lons.length,
+      lat: lats[Math.floor(lats.length/2)],
+      lon: lons[Math.floor(lons.length/2)],
     };
   }
 
