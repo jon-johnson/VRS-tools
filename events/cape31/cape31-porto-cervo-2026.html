@@ -2716,7 +2716,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
 
       // OCS classification using signed distance
       // Check if official results has an OCS for this boat
-      const officialRace = (OFFICIAL_RESULTS_BY_DAY[event._dayIdx||0] || OFFICIAL_RESULTS_BY_DAY[0])[raceNum] || {};
+      const officialRace = ((OFFICIAL_RESULTS_BY_DAY[event._dayIdx||0] || OFFICIAL_RESULTS_BY_DAY[0])||{})[raceNum] || {};
       const officialOCS = officialRace[sail] === 'OCS' || officialRace[sail] === 999;
       // Only mark OCS if official results confirm it — no guessing
       let startStatus;
@@ -3977,7 +3977,7 @@ function drawDeltaR(rd){
   const el = document.getElementById(raceDomId(rd,'cDelta'));
   if(!el) return;
   // Use official results if available, otherwise fall back to GPS finish times
-  const officialRace = (OFFICIAL_RESULTS_BY_DAY[rd.event?._dayIdx||rd._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])[raceNum];
+  const officialRace = ((OFFICIAL_RESULTS_BY_DAY[rd.event?._dayIdx||rd._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])||{})[raceNum];
   let finOrder;
   if(officialRace && Object.keys(officialRace).length){
     finOrder = Object.entries(officialRace)
@@ -4023,7 +4023,7 @@ function renderEventSummary(panelEl, allRaces){
 
   for(const rd of allRaces){
     const dayIdx = rd.event?._dayIdx ?? 0;
-    const officialRace = (OFFICIAL_RESULTS_BY_DAY[dayIdx]||OFFICIAL_RESULTS_BY_DAY[0])[rd.raceNum] || {};
+    const officialRace = ((OFFICIAL_RESULTS_BY_DAY[dayIdx]||OFFICIAL_RESULTS_BY_DAY[0])||{})[rd.raceNum] || {};
     for(const b of allBoats){
       const rp = rd.l1Order.indexOf(b);
       boatData[b].reachPos.push(rp>=0?rp+1:null);
@@ -4238,7 +4238,7 @@ function renderDaySummary(panelEl, event, races){
   const regionStats = { LOW:[], MID:[], HIGH:[] };
 
   for(const rd of loaded){
-    const officialRace = (OFFICIAL_RESULTS_BY_DAY[rd.event._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])[rd.raceNum] || {};
+    const officialRace = ((OFFICIAL_RESULTS_BY_DAY[rd.event._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])||{})[rd.raceNum] || {};
     // Build finish order from OFFICIAL_RESULTS (numeric pos, ascending)
     const finOrder = Object.entries(officialRace)
       .filter(([,v])=>typeof v==='number')
