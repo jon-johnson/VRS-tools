@@ -2900,7 +2900,7 @@ function renderRacePanel(panelEl, rd){
     <div class="course-and-right" style="display:grid;grid-template-columns:minmax(360px,460px) minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:12px;align-items:start">
       <div class="official-card">
         ${(()=>{
-          const or=(OFFICIAL_RESULTS_BY_DAY[rd.event._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])[raceNum];
+          const or=((OFFICIAL_RESULTS_BY_DAY[rd.event._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])||{})[raceNum];
           if(!or||!Object.keys(or).length) return '';
           const uwPos = {};
           (l1Order||[]).forEach((sail,i)=>{ uwPos[sail]=i+1; });
