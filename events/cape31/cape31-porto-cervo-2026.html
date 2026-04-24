@@ -1453,8 +1453,8 @@ function rotProj(pts,W,H,px,py){
 function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge,bowOffset=true){
   // Cape 31 plan-view: elongated sharp bow, max beam ~55% aft of bow, wide flat transom
   // Based on actual boat plan — like a stretched teardrop with flat stern
-  const L = Math.max(4, 11/mpp);    // half-length in pixels
-  const B = Math.max(0.8, 2/mpp);   // half-beam in pixels
+  const L = Math.max(2.0, 5.4/mpp);  // half-length (30% smaller + 30% shorter)
+  const B = Math.max(0.56, 1.4/mpp); // half-beam (30% smaller)
 
   const hr = hdgDeg * D2R;
   const fx =  Math.sin(hr), fy = -Math.cos(hr); // forward (bow direction)
@@ -2337,10 +2337,71 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     if(inf){ WWGATE = WWGATE||inf.ww; LWGATE = LWGATE||inf.lw; }
   }
 
+  // Bearing helper alias
+  const brgFn = (a,b,c,d) => brg(a,b,c,d);
+
   // Start line midpoint
   const MID = RC && PIN ? {
     lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2
   } : null;
+
+  // ── START LINE BIAS ─────────────────────────────────────────────
+  // Infer wind from fleet upwind headings in first 5 min after gun,
+  // then compute which end of line is favoured geometrically.
+  let startBias = null;
+  if(RC && PIN){
+    const bStart = gunTs + 20000, bEnd = gunTs + 300000;
+    const portHdgs = [], stbdHdgs = [];
+    const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
+    for(const [,t] of Object.entries(tracks)){
+      const seg = t.filter(p => p.ts >= bStart && p.ts <= bEnd);
+      for(let i=2;i<seg.length-2;i++){
+        const p = seg[i];
+        const sogKt = (p.sog||0)*0.539957;
+        if(sogKt < 2.5) continue;
+        const hdgs5 = [seg[i-2],seg[i-1],p,seg[i+1],seg[i+2]].map(s=>s.hdg||s.cog||0);
+        let sx2=0,sy2=0;
+        for(const h of hdgs5){sx2+=Math.cos(h*D2R);sy2+=Math.sin(h*D2R);}
+        if(Math.hypot(sx2,sy2)/5 < 0.92) continue; // turning — skip
+        const cog = p.hdg||p.cog||0;
+        const w = Math.min(3, sogKt/5);
+        const rel = ((cog - lineAxis + 360) % 360);
+        if(rel < 180) stbdHdgs.push({a:cog,w});
+        else           portHdgs.push({a:cog,w});
+      }
+    }
+    function circMeanW2(items){
+      if(!items.length) return null;
+      let sx=0,sy=0,sw=0;
+      for(const it of items){sx+=Math.cos(it.a*D2R)*it.w;sy+=Math.sin(it.a*D2R)*it.w;sw+=it.w;}
+      if(!sw) return null;
+      return(Math.atan2(sy/sw,sx/sw)/D2R+360)%360;
+    }
+    const mpPort = circMeanW2(portHdgs), mpStbd = circMeanW2(stbdHdgs);
+    let windDir = null;
+    if(mpPort!=null && mpStbd!=null){
+      const bsx=Math.cos(mpPort*D2R)+Math.cos(mpStbd*D2R);
+      const bsy=Math.sin(mpPort*D2R)+Math.sin(mpStbd*D2R);
+      windDir=(Math.atan2(bsy,bsx)/D2R+360)%360;
+    } else if(mpStbd!=null){ windDir=mpStbd; }
+    else if(mpPort!=null){ windDir=mpPort; }
+    const inferConf=Math.min(portHdgs.length,stbdHdgs.length);
+    if(WF!=null && inferConf<5) windDir=WF;
+    if(windDir!=null){
+      const squareAxis=(windDir+90+360)%360;
+      let bias=((lineAxis-squareAxis+180+360)%360)-180;
+      const lineLenM=hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
+      const secsPerDeg=lineLenM/170;
+      startBias={
+        windDir:+windDir.toFixed(1), lineAxis:+lineAxis.toFixed(1),
+        biasDeg:+bias.toFixed(1), biasSecs:+(Math.abs(bias)*secsPerDeg).toFixed(1),
+        favoured:Math.abs(bias)<1.5?'SQUARE':bias>0?'RC':'PIN',
+        portN:portHdgs.length, stbdN:stbdHdgs.length,
+        conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
+      };
+      if(WF==null || inferConf>=8) WF=windDir;
+    }
+  }
 
   // ── Per-boat VMG analysis (upwind and downwind legs) ──
   // Uses the inferred wind direction and course axis to classify segments.
@@ -2767,7 +2828,20 @@ function renderRacePanel(panelEl, rd){
 
       <div class="replayDataCol">
         <!-- Start table — aligned under T+50 -->
-        <div class="sh">START REPORT — boat-by-boat</div>
+        ${(()=>{
+  const sb = rd.startBias;
+  if(!sb) return '';
+  const col = sb.favoured==='RC' ? 'var(--orange)' : sb.favoured==='PIN' ? 'var(--teal)' : 'var(--green)';
+  const biasStr = sb.favoured==='SQUARE' ? 'Square' : sb.favoured+' +'+sb.biasSecs+'s ('+(sb.biasDeg>0?'+':'')+sb.biasDeg+'°)';
+  const windStr = 'Wind '+sb.windDir+'° (inferred '+sb.conf+')';
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px;border:1px solid var(--border)">'
+    +'<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Start Line Bias</div>'
+    +'<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:'+col+'">'+biasStr+'</div>'
+    +'<div style="margin-left:auto;font-size:10px;color:var(--muted2)">'+windStr+'</div>'
+    +'<div style="font-size:10px;color:var(--muted2)">Line '+sb.lineAxis.toFixed(1)+'° · '+sb.portN+'P/'+sb.stbdN+'S samples</div>'
+    +'</div>';
+})()}
+<div class="sh">START REPORT — boat-by-boat</div>
         <div class="table-scroll"><table class="start-table" id="${startTableId}"><thead><tr>
       <th data-col="rank" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','rank','asc',true)">#</th>
       <th>Boat</th>
