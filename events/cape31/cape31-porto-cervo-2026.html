@@ -2426,7 +2426,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   // Infer wind from fleet upwind headings in first 5 min after gun,
   // then compute which end of line is favoured geometrically.
   let startBias = null;
-  if(RC && PIN){
+  try{ if(RC && PIN){
     const bStart = gunTs + 20000, bEnd = gunTs + 300000;
     const portHdgs = [], stbdHdgs = [];
     const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
@@ -2479,7 +2479,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       // Store inferred wind back if better than existing
       if((WF==null || inferConf>=8) && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
     }
-  }
+  }} catch(e){ console.error('startBias error:', e); }
 
 
   // rm.reachTimes is a map of sail -> {markTime, minDist, conf}
