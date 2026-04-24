@@ -2345,63 +2345,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2
   } : null;
 
-  // ── START LINE BIAS ─────────────────────────────────────────────
-  // Infer wind from fleet upwind headings in first 5 min after gun,
-  // then compute which end of line is favoured geometrically.
-  let startBias = null;
-  if(RC && PIN){
-    const bStart = gunTs + 20000, bEnd = gunTs + 300000;
-    const portHdgs = [], stbdHdgs = [];
-    const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
-    for(const [,t] of Object.entries(tracks)){
-      const seg = t.filter(p => p.ts >= bStart && p.ts <= bEnd);
-      for(let i=2;i<seg.length-2;i++){
-        const p = seg[i];
-        const sogKt = (p.sog||0)*0.539957;
-        if(sogKt < 2.5) continue;
-        const hdgs5 = [seg[i-2],seg[i-1],p,seg[i+1],seg[i+2]].map(s=>s.hdg||s.cog||0);
-        let sx2=0,sy2=0;
-        for(const h of hdgs5){sx2+=Math.cos(h*D2R);sy2+=Math.sin(h*D2R);}
-        if(Math.hypot(sx2,sy2)/5 < 0.92) continue; // turning — skip
-        const cog = p.hdg||p.cog||0;
-        const w = Math.min(3, sogKt/5);
-        const rel = ((cog - lineAxis + 360) % 360);
-        if(rel < 180) stbdHdgs.push({a:cog,w});
-        else           portHdgs.push({a:cog,w});
-      }
-    }
-    function circMeanW2(items){
-      if(!items.length) return null;
-      let sx=0,sy=0,sw=0;
-      for(const it of items){sx+=Math.cos(it.a*D2R)*it.w;sy+=Math.sin(it.a*D2R)*it.w;sw+=it.w;}
-      if(!sw) return null;
-      return(Math.atan2(sy/sw,sx/sw)/D2R+360)%360;
-    }
-    const mpPort = circMeanW2(portHdgs), mpStbd = circMeanW2(stbdHdgs);
-    let windDir = null;
-    if(mpPort!=null && mpStbd!=null){
-      const bsx=Math.cos(mpPort*D2R)+Math.cos(mpStbd*D2R);
-      const bsy=Math.sin(mpPort*D2R)+Math.sin(mpStbd*D2R);
-      windDir=(Math.atan2(bsy,bsx)/D2R+360)%360;
-    } else if(mpStbd!=null){ windDir=mpStbd; }
-    else if(mpPort!=null){ windDir=mpPort; }
-    const inferConf=Math.min(portHdgs.length,stbdHdgs.length);
-    if(WF!=null && inferConf<5) windDir=WF;
-    if(windDir!=null){
-      const squareAxis=(windDir+90+360)%360;
-      let bias=((lineAxis-squareAxis+180+360)%360)-180;
-      const lineLenM=hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
-      const secsPerDeg=lineLenM/170;
-      startBias={
-        windDir:+windDir.toFixed(1), lineAxis:+lineAxis.toFixed(1),
-        biasDeg:+bias.toFixed(1), biasSecs:+(Math.abs(bias)*secsPerDeg).toFixed(1),
-        favoured:Math.abs(bias)<1.5?'SQUARE':bias>0?'RC':'PIN',
-        portN:portHdgs.length, stbdN:stbdHdgs.length,
-        conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
-      };
-      if(WF==null || inferConf>=8) WF=windDir;
-    }
-  }
+
 
   // ── Per-boat VMG analysis (upwind and downwind legs) ──
   // Uses the inferred wind direction and course axis to classify segments.
@@ -2477,6 +2421,65 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const WF_RACE_OBJ = WWGATE && LWGATE ? inferWind(tracks, WWGATE.lat, WWGATE.lon, LWGATE.lat, LWGATE.lon, gunTs, raceEnd) : null;
   const WF_OBJ = WF_RACE_OBJ;
   const WF = WF_RACE_OBJ ? WF_RACE_OBJ.wf : null;
+
+  // ── START LINE BIAS ─────────────────────────────────────────────
+  // Infer wind from fleet upwind headings in first 5 min after gun,
+  // then compute which end of line is favoured geometrically.
+  let startBias = null;
+  if(RC && PIN){
+    const bStart = gunTs + 20000, bEnd = gunTs + 300000;
+    const portHdgs = [], stbdHdgs = [];
+    const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
+    for(const [,t] of Object.entries(tracks)){
+      const seg = t.filter(p => p.ts >= bStart && p.ts <= bEnd);
+      for(let i=2;i<seg.length-2;i++){
+        const p = seg[i];
+        const sogKt = (p.sog||0)*0.539957;
+        if(sogKt < 2.5) continue;
+        const hdgs5 = [seg[i-2],seg[i-1],p,seg[i+1],seg[i+2]].map(s=>s.hdg||s.cog||0);
+        let sx2=0,sy2=0;
+        for(const h of hdgs5){sx2+=Math.cos(h*D2R);sy2+=Math.sin(h*D2R);}
+        if(Math.hypot(sx2,sy2)/5 < 0.92) continue; // turning — skip
+        const cog = p.hdg||p.cog||0;
+        const w = Math.min(3, sogKt/5);
+        const rel = ((cog - lineAxis + 360) % 360);
+        if(rel < 180) stbdHdgs.push({a:cog,w});
+        else           portHdgs.push({a:cog,w});
+      }
+    }
+    function circMeanW2(items){
+      if(!items.length) return null;
+      let sx=0,sy=0,sw=0;
+      for(const it of items){sx+=Math.cos(it.a*D2R)*it.w;sy+=Math.sin(it.a*D2R)*it.w;sw+=it.w;}
+      if(!sw) return null;
+      return(Math.atan2(sy/sw,sx/sw)/D2R+360)%360;
+    }
+    const mpPort = circMeanW2(portHdgs), mpStbd = circMeanW2(stbdHdgs);
+    let windDir = null;
+    if(mpPort!=null && mpStbd!=null){
+      const bsx=Math.cos(mpPort*D2R)+Math.cos(mpStbd*D2R);
+      const bsy=Math.sin(mpPort*D2R)+Math.sin(mpStbd*D2R);
+      windDir=(Math.atan2(bsy,bsx)/D2R+360)%360;
+    } else if(mpStbd!=null){ windDir=mpStbd; }
+    else if(mpPort!=null){ windDir=mpPort; }
+    const inferConf=Math.min(portHdgs.length,stbdHdgs.length);
+    if(WF!=null && inferConf<5) windDir=WF; // fallback to existing wind estimate
+    if(windDir!=null){
+      const squareAxis=(windDir+90+360)%360;
+      let bias=((lineAxis-squareAxis+180+360)%360)-180;
+      const lineLenM=hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
+      const secsPerDeg=lineLenM/170;
+      startBias={
+        windDir:+windDir.toFixed(1), lineAxis:+lineAxis.toFixed(1),
+        biasDeg:+bias.toFixed(1), biasSecs:+(Math.abs(bias)*secsPerDeg).toFixed(1),
+        favoured:Math.abs(bias)<1.5?'SQUARE':bias>0?'RC':'PIN',
+        portN:portHdgs.length, stbdN:stbdHdgs.length,
+        conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
+      };
+      // Store inferred wind back if better than existing
+      if((WF==null || inferConf>=8) && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
+    }
+  }
 
 
   // rm.reachTimes is a map of sail -> {markTime, minDist, conf}
