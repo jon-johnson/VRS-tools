@@ -615,12 +615,14 @@ const GATE_SNS = {
 // Physics constants
 const D2R = Math.PI/180;
 const RE  = 6371000;
-const M32_LEN  = 9.68;
-// ── M32 ESTIMATED POLAR ──────────────────────────────────────────────────────
-const M32_POLAR = {"6": {"50": 9.2, "51": 9.23, "52": 9.26, "53": 9.29, "54": 9.32, "55": 9.35, "56": 9.38, "57": 9.41, "58": 9.44, "59": 9.47, "60": 9.5, "61": 9.53, "62": 9.56, "63": 9.59, "64": 9.62, "65": 9.65, "66": 9.68, "67": 9.71, "68": 9.74, "69": 9.77, "70": 9.8, "71": 9.82, "72": 9.84, "73": 9.86, "74": 9.88, "75": 9.9, "76": 9.91, "77": 9.92, "78": 9.93, "79": 9.94, "80": 9.95, "81": 9.956, "82": 9.962, "83": 9.968, "84": 9.974, "85": 9.98, "86": 9.984, "87": 9.988, "88": 9.992, "89": 9.996, "90": 10.0, "91": 10.1, "92": 10.2, "93": 10.3, "94": 10.4, "95": 10.5, "96": 10.6, "97": 10.7, "98": 10.8, "99": 10.9, "100": 11.0, "101": 11.03, "102": 11.06, "103": 11.09, "104": 11.12, "105": 11.15, "106": 11.17, "107": 11.19, "108": 11.21, "109": 11.23, "110": 11.25, "111": 11.24, "112": 11.23, "113": 11.22, "114": 11.21, "115": 11.2, "116": 11.16, "117": 11.12, "118": 11.08, "119": 11.04, "120": 11.0, "121": 10.94, "122": 10.88, "123": 10.82, "124": 10.76, "125": 10.7, "126": 10.64, "127": 10.58, "128": 10.52, "129": 10.46, "130": 10.4, "131": 10.32, "132": 10.24, "133": 10.16, "134": 10.08, "135": 10.0, "136": 9.98, "137": 9.96, "138": 9.94, "139": 9.92, "140": 9.9, "141": 9.88, "142": 9.86, "143": 9.84, "144": 9.82, "145": 9.8, "146": 9.78, "147": 9.76, "148": 9.74, "149": 9.72, "150": 9.7}, "8": {"50": 10.06, "51": 10.078, "52": 10.096, "53": 10.114, "54": 10.132, "55": 10.15, "56": 10.166, "57": 10.182, "58": 10.198, "59": 10.214, "60": 10.23, "61": 10.254, "62": 10.278, "63": 10.302, "64": 10.326, "65": 10.35, "66": 10.374, "67": 10.398, "68": 10.422, "69": 10.446, "70": 10.47, "71": 10.57, "72": 10.67, "73": 10.77, "74": 10.87, "75": 10.97, "76": 11.066, "77": 11.162, "78": 11.258, "79": 11.354, "80": 11.45, "81": 11.514, "82": 11.578, "83": 11.642, "84": 11.706, "85": 11.77, "86": 11.832, "87": 11.894, "88": 11.956, "89": 12.018, "90": 12.08, "91": 12.176, "92": 12.272, "93": 12.368, "94": 12.464, "95": 12.56, "96": 12.656, "97": 12.752, "98": 12.848, "99": 12.944, "100": 13.04, "101": 13.04, "102": 13.04, "103": 13.04, "104": 13.04, "105": 13.04, "106": 13.056, "107": 13.072, "108": 13.088, "109": 13.104, "110": 13.12, "111": 13.118, "112": 13.116, "113": 13.114, "114": 13.112, "115": 13.11, "116": 13.108, "117": 13.106, "118": 13.104, "119": 13.102, "120": 13.1, "121": 13.052, "122": 13.004, "123": 12.956, "124": 12.908, "125": 12.86, "126": 12.81, "127": 12.76, "128": 12.71, "129": 12.66, "130": 12.61, "131": 12.57, "132": 12.53, "133": 12.49, "134": 12.45, "135": 12.41, "136": 12.41, "137": 12.41, "138": 12.41, "139": 12.41, "140": 12.41, "141": 12.422, "142": 12.434, "143": 12.446, "144": 12.458, "145": 12.47, "146": 12.484, "147": 12.498, "148": 12.512, "149": 12.526, "150": 12.54}, "10": {"50": 10.93, "51": 10.932, "52": 10.934, "53": 10.936, "54": 10.938, "55": 10.94, "56": 10.944, "57": 10.948, "58": 10.952, "59": 10.956, "60": 10.96, "61": 10.978, "62": 10.996, "63": 11.014, "64": 11.032, "65": 11.05, "66": 11.066, "67": 11.082, "68": 11.098, "69": 11.114, "70": 11.13, "71": 11.314, "72": 11.498, "73": 11.682, "74": 11.866, "75": 12.05, "76": 12.23, "77": 12.41, "78": 12.59, "79": 12.77, "80": 12.95, "81": 13.072, "82": 13.194, "83": 13.316, "84": 13.438, "85": 13.56, "86": 13.68, "87": 13.8, "88": 13.92, "89": 14.04, "90": 14.16, "91": 14.254, "92": 14.348, "93": 14.442, "94": 14.536, "95": 14.63, "96": 14.72, "97": 14.81, "98": 14.9, "99": 14.99, "100": 15.08, "101": 15.05, "102": 15.02, "103": 14.99, "104": 14.96, "105": 14.93, "106": 14.94, "107": 14.95, "108": 14.96, "109": 14.97, "110": 14.98, "111": 14.986, "112": 14.992, "113": 14.998, "114": 15.004, "115": 15.01, "116": 15.046, "117": 15.082, "118": 15.118, "119": 15.154, "120": 15.19, "121": 15.154, "122": 15.118, "123": 15.082, "124": 15.046, "125": 15.01, "126": 14.97, "127": 14.93, "128": 14.89, "129": 14.85, "130": 14.81, "131": 14.81, "132": 14.81, "133": 14.81, "134": 14.81, "135": 14.81, "136": 14.83, "137": 14.85, "138": 14.87, "139": 14.89, "140": 14.91, "141": 14.958, "142": 15.006, "143": 15.054, "144": 15.102, "145": 15.15, "146": 15.196, "147": 15.242, "148": 15.288, "149": 15.334, "150": 15.38}, "12": {"50": 11.79, "51": 11.78, "52": 11.77, "53": 11.76, "54": 11.75, "55": 11.74, "56": 11.73, "57": 11.72, "58": 11.71, "59": 11.7, "60": 11.69, "61": 11.702, "62": 11.714, "63": 11.726, "64": 11.738, "65": 11.75, "66": 11.76, "67": 11.77, "68": 11.78, "69": 11.79, "70": 11.8, "71": 12.064, "72": 12.328, "73": 12.592, "74": 12.856, "75": 13.12, "76": 13.386, "77": 13.652, "78": 13.918, "79": 14.184, "80": 14.45, "81": 14.63, "82": 14.81, "83": 14.99, "84": 15.17, "85": 15.35, "86": 15.53, "87": 15.71, "88": 15.89, "89": 16.07, "90": 16.25, "91": 16.338, "92": 16.426, "93": 16.514, "94": 16.602, "95": 16.69, "96": 16.776, "97": 16.862, "98": 16.948, "99": 17.034, "100": 17.12, "101": 17.062, "102": 17.004, "103": 16.946, "104": 16.888, "105": 16.83, "106": 16.772, "107": 16.714, "108": 16.656, "109": 16.598, "110": 16.54, "111": 16.616, "112": 16.692, "113": 16.768, "114": 16.844, "115": 16.92, "116": 16.994, "117": 17.068, "118": 17.142, "119": 17.216, "120": 17.29, "121": 17.264, "122": 17.238, "123": 17.212, "124": 17.186, "125": 17.16, "126": 17.132, "127": 17.104, "128": 17.076, "129": 17.048, "130": 17.02, "131": 17.06, "132": 17.1, "133": 17.14, "134": 17.18, "135": 17.22, "136": 17.26, "137": 17.3, "138": 17.34, "139": 17.38, "140": 17.42, "141": 17.5, "142": 17.58, "143": 17.66, "144": 17.74, "145": 17.82, "146": 17.9, "147": 17.98, "148": 18.06, "149": 18.14, "150": 18.22}, "14": {"50": 12.19, "51": 12.198, "52": 12.206, "53": 12.214, "54": 12.222, "55": 12.23, "56": 12.242, "57": 12.254, "58": 12.266, "59": 12.278, "60": 12.29, "61": 12.324, "62": 12.358, "63": 12.392, "64": 12.426, "65": 12.46, "66": 12.496, "67": 12.532, "68": 12.568, "69": 12.604, "70": 12.64, "71": 12.892, "72": 13.144, "73": 13.396, "74": 13.648, "75": 13.9, "76": 14.244, "77": 14.588, "78": 14.932, "79": 15.276, "80": 15.62, "81": 15.736, "82": 15.852, "83": 15.968, "84": 16.084, "85": 16.2, "86": 16.392, "87": 16.584, "88": 16.776, "89": 16.968, "90": 17.16, "91": 17.27, "92": 17.38, "93": 17.49, "94": 17.6, "95": 17.71, "96": 17.812, "97": 17.914, "98": 18.016, "99": 18.118, "100": 18.22, "101": 18.192, "102": 18.164, "103": 18.136, "104": 18.108, "105": 18.08, "106": 18.05, "107": 18.02, "108": 17.99, "109": 17.96, "110": 17.93, "111": 18.004, "112": 18.078, "113": 18.152, "114": 18.226, "115": 18.3, "116": 18.37, "117": 18.44, "118": 18.51, "119": 18.58, "120": 18.65, "121": 18.676, "122": 18.702, "123": 18.728, "124": 18.754, "125": 18.78, "126": 18.732, "127": 18.684, "128": 18.636, "129": 18.588, "130": 18.54, "131": 18.58, "132": 18.62, "133": 18.66, "134": 18.7, "135": 18.74, "136": 18.776, "137": 18.812, "138": 18.848, "139": 18.884, "140": 18.92, "141": 18.988, "142": 19.056, "143": 19.124, "144": 19.192, "145": 19.26, "146": 19.324, "147": 19.388, "148": 19.452, "149": 19.516, "150": 19.58}, "16": {"50": 12.59, "51": 12.616, "52": 12.642, "53": 12.668, "54": 12.694, "55": 12.72, "56": 12.754, "57": 12.788, "58": 12.822, "59": 12.856, "60": 12.89, "61": 12.946, "62": 13.002, "63": 13.058, "64": 13.114, "65": 13.17, "66": 13.232, "67": 13.294, "68": 13.356, "69": 13.418, "70": 13.48, "71": 13.722, "72": 13.964, "73": 14.206, "74": 14.448, "75": 14.69, "76": 15.03, "77": 15.37, "78": 15.71, "79": 16.05, "80": 16.39, "81": 16.522, "82": 16.654, "83": 16.786, "84": 16.918, "85": 17.05, "86": 17.254, "87": 17.458, "88": 17.662, "89": 17.866, "90": 18.07, "91": 18.2, "92": 18.33, "93": 18.46, "94": 18.59, "95": 18.72, "96": 18.838, "97": 18.956, "98": 19.074, "99": 19.192, "100": 19.31, "101": 19.314, "102": 19.318, "103": 19.322, "104": 19.326, "105": 19.33, "106": 19.328, "107": 19.326, "108": 19.324, "109": 19.322, "110": 19.32, "111": 19.392, "112": 19.464, "113": 19.536, "114": 19.608, "115": 19.68, "116": 19.748, "117": 19.816, "118": 19.884, "119": 19.952, "120": 20.02, "121": 20.096, "122": 20.172, "123": 20.248, "124": 20.324, "125": 20.4, "126": 20.33, "127": 20.26, "128": 20.19, "129": 20.12, "130": 20.05, "131": 20.09, "132": 20.13, "133": 20.17, "134": 20.21, "135": 20.25, "136": 20.282, "137": 20.314, "138": 20.346, "139": 20.378, "140": 20.41, "141": 20.466, "142": 20.522, "143": 20.578, "144": 20.634, "145": 20.69, "146": 20.738, "147": 20.786, "148": 20.834, "149": 20.882, "150": 20.93}, "18": {"50": 13.0, "51": 13.044, "52": 13.088, "53": 13.132, "54": 13.176, "55": 13.22, "56": 13.276, "57": 13.332, "58": 13.388, "59": 13.444, "60": 13.5, "61": 13.576, "62": 13.652, "63": 13.728, "64": 13.804, "65": 13.88, "66": 13.968, "67": 14.056, "68": 14.144, "69": 14.232, "70": 14.32, "71": 14.55, "72": 14.78, "73": 15.01, "74": 15.24, "75": 15.47, "76": 15.808, "77": 16.146, "78": 16.484, "79": 16.822, "80": 17.16, "81": 17.308, "82": 17.456, "83": 17.604, "84": 17.752, "85": 17.9, "86": 18.116, "87": 18.332, "88": 18.548, "89": 18.764, "90": 18.98, "91": 19.13, "92": 19.28, "93": 19.43, "94": 19.58, "95": 19.73, "96": 19.866, "97": 20.002, "98": 20.138, "99": 20.274, "100": 20.41, "101": 20.444, "102": 20.478, "103": 20.512, "104": 20.546, "105": 20.58, "106": 20.604, "107": 20.628, "108": 20.652, "109": 20.676, "110": 20.7, "111": 20.772, "112": 20.844, "113": 20.916, "114": 20.988, "115": 21.06, "116": 21.124, "117": 21.188, "118": 21.252, "119": 21.316, "120": 21.38, "121": 21.508, "122": 21.636, "123": 21.764, "124": 21.892, "125": 22.02, "126": 21.93, "127": 21.84, "128": 21.75, "129": 21.66, "130": 21.57, "131": 21.61, "132": 21.65, "133": 21.69, "134": 21.73, "135": 21.77, "136": 21.798, "137": 21.826, "138": 21.854, "139": 21.882, "140": 21.91, "141": 21.954, "142": 21.998, "143": 22.042, "144": 22.086, "145": 22.13, "146": 22.162, "147": 22.194, "148": 22.226, "149": 22.258, "150": 22.29}, "20": {"50": 13.4, "51": 13.462, "52": 13.524, "53": 13.586, "54": 13.648, "55": 13.71, "56": 13.788, "57": 13.866, "58": 13.944, "59": 14.022, "60": 14.1, "61": 14.198, "62": 14.296, "63": 14.394, "64": 14.492, "65": 14.59, "66": 14.704, "67": 14.818, "68": 14.932, "69": 15.046, "70": 15.16, "71": 15.38, "72": 15.6, "73": 15.82, "74": 16.04, "75": 16.26, "76": 16.594, "77": 16.928, "78": 17.262, "79": 17.596, "80": 17.93, "81": 18.094, "82": 18.258, "83": 18.422, "84": 18.586, "85": 18.75, "86": 18.978, "87": 19.206, "88": 19.434, "89": 19.662, "90": 19.89, "91": 20.062, "92": 20.234, "93": 20.406, "94": 20.578, "95": 20.75, "96": 20.9, "97": 21.05, "98": 21.2, "99": 21.35, "100": 21.5, "101": 21.566, "102": 21.632, "103": 21.698, "104": 21.764, "105": 21.83, "106": 21.882, "107": 21.934, "108": 21.986, "109": 22.038, "110": 22.09, "111": 22.16, "112": 22.23, "113": 22.3, "114": 22.37, "115": 22.44, "116": 22.5, "117": 22.56, "118": 22.62, "119": 22.68, "120": 22.74, "121": 22.92, "122": 23.1, "123": 23.28, "124": 23.46, "125": 23.64, "126": 23.528, "127": 23.416, "128": 23.304, "129": 23.192, "130": 23.08, "131": 23.12, "132": 23.16, "133": 23.2, "134": 23.24, "135": 23.28, "136": 23.304, "137": 23.328, "138": 23.352, "139": 23.376, "140": 23.4, "141": 23.432, "142": 23.464, "143": 23.496, "144": 23.528, "145": 23.56, "146": 23.576, "147": 23.592, "148": 23.608, "149": 23.624, "150": 23.64}, "22": {"50": 13.8, "51": 13.88, "52": 13.96, "53": 14.04, "54": 14.12, "55": 14.2, "56": 14.3, "57": 14.4, "58": 14.5, "59": 14.6, "60": 14.7, "61": 14.82, "62": 14.94, "63": 15.06, "64": 15.18, "65": 15.3, "66": 15.44, "67": 15.58, "68": 15.72, "69": 15.86, "70": 16.0, "71": 16.2, "72": 16.4, "73": 16.6, "74": 16.8, "75": 17.0, "76": 17.26, "77": 17.52, "78": 17.78, "79": 18.04, "80": 18.3, "81": 18.56, "82": 18.82, "83": 19.08, "84": 19.34, "85": 19.6, "86": 19.84, "87": 20.08, "88": 20.32, "89": 20.56, "90": 20.8, "91": 21.0, "92": 21.2, "93": 21.4, "94": 21.6, "95": 21.8, "96": 21.96, "97": 22.12, "98": 22.28, "99": 22.44, "100": 22.6, "101": 22.7, "102": 22.8, "103": 22.9, "104": 23.0, "105": 23.1, "106": 23.18, "107": 23.26, "108": 23.34, "109": 23.42, "110": 23.5, "111": 23.56, "112": 23.62, "113": 23.68, "114": 23.74, "115": 23.8, "116": 23.86, "117": 23.92, "118": 23.98, "119": 24.04, "120": 24.1, "121": 24.16, "122": 24.22, "123": 24.28, "124": 24.34, "125": 24.4, "126": 24.44, "127": 24.48, "128": 24.52, "129": 24.56, "130": 24.6, "131": 24.64, "132": 24.68, "133": 24.72, "134": 24.76, "135": 24.8, "136": 24.82, "137": 24.84, "138": 24.86, "139": 24.88, "140": 24.9, "141": 24.92, "142": 24.94, "143": 24.96, "144": 24.98, "145": 25.0, "146": 25.0, "147": 25.0, "148": 25.0, "149": 25.0, "150": 25.0}};
-const M32_POLAR_TWS = [6, 8, 10, 12, 14, 16, 18, 20, 22];
-const M32_POLAR_TWA_MIN = 50;
-const M32_POLAR_TWA_MAX = 150;
+const BOAT_LOA = 9.45;  // Cape 31 length overall (m)
+const BOAT_BEAM = 2.75; // Cape 31 beam (m)
+const BOAT_CLASS = 'cape31';
+// ── CAPE 31 POLAR (TWS → TWA → boatspeed kts) ────────────────────────────────
+const BOAT_POLAR = {"4":{"30":2.51,"40":3.3,"50":4.01,"60":4.42,"70":4.47,"80":4.45,"90":4.44,"100":4.52,"110":4.57,"120":4.61,"130":4.55,"140":4.23,"150":3.69},"6":{"30":3.79,"40":4.99,"50":6.04,"60":6.62,"70":6.7,"80":6.67,"90":6.66,"100":6.79,"110":6.86,"120":6.92,"130":6.84,"140":6.36,"150":5.55},"8":{"30":4.81,"40":6.16,"50":7.1,"60":7.62,"70":7.89,"80":7.99,"90":8.01,"100":8.22,"110":8.3,"120":8.28,"130":8.11,"140":7.56,"150":6.64},"10":{"30":5.63,"40":6.98,"50":7.77,"60":8.28,"70":8.78,"80":9.06,"90":9.16,"100":9.51,"110":9.56,"120":9.24,"130":8.78,"140":8,"150":7.05},"12":{"30":5.92,"40":7.26,"50":8.1,"60":8.73,"70":9.39,"80":9.8,"90":10.02,"100":10.45,"110":10.62,"120":10.58,"130":10.32,"140":9.54,"150":8.38},"14":{"30":6.03,"40":7.38,"50":8.3,"60":9.04,"70":9.77,"80":10.27,"90":10.6,"100":11.01,"110":11.32,"120":11.8,"130":11.97,"140":11.27,"150":9.9},"16":{"30":6.15,"40":7.55,"50":8.49,"60":9.27,"70":10.08,"80":10.67,"90":11.09,"100":11.5,"110":11.9,"120":12.71,"130":13.15,"140":12.5,"150":11.01},"18":{"30":5.74,"40":7.27,"50":8.45,"60":9.47,"70":10.35,"80":11.02,"90":11.57,"100":11.89,"110":12.48,"120":14.06,"130":15.14,"140":14.64,"150":12.78},"20":{"30":5.74,"40":7.27,"50":8.47,"60":9.55,"70":10.55,"80":11.33,"90":11.97,"100":12.37,"110":13.03,"120":14.57,"130":15.73,"140":15.74,"150":14.24},"22":{"30":5.71,"40":7.23,"50":8.44,"60":9.55,"70":10.6,"80":11.44,"90":12.14,"100":12.57,"110":13.27,"120":14.83,"130":16.04,"140":16.27,"150":15.01},"24":{"30":5.68,"40":7.2,"50":8.43,"60":9.56,"70":10.64,"80":11.52,"90":12.27,"100":12.7,"110":13.44,"120":15.06,"130":16.34,"140":16.64,"150":15.54}};
+const BOAT_POLAR_TWS = [6, 8, 10, 12, 14, 16, 18, 20, 22];
+const BOAT_POLAR_TWA_MIN = 50;
+const BOAT_POLAR_TWA_MAX = 150;
 
 
 function clonePolar(src){ return JSON.parse(JSON.stringify(src)); }
@@ -633,8 +635,8 @@ function safeLocalGet(key){ try{return JSON.parse(localStorage.getItem(key)||'nu
 function safeLocalSet(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ console.warn('localStorage set failed', key, e); } }
 function getActivePolarStore(){ return safeLocalGet(POLAR_ACTIVE_KEY); }
 function getCandidatePolarStore(){ return safeLocalGet(POLAR_CANDIDATE_KEY); }
-function getPolarObsStore(){ return safeLocalGet(POLAR_OBS_KEY) || {className:'M32', version:1, observations:{}}; }
-function getPolarGrid(){ return (getActivePolarStore()?.polar) || M32_POLAR; }
+function getPolarObsStore(){ return safeLocalGet(POLAR_OBS_KEY) || {className:BOAT_CLASS, version:1, observations:{}}; }
+function getPolarGrid(){ return (getActivePolarStore()?.polar) || BOAT_POLAR; }
 function getTwsOverrideStore(){ return safeLocalGet(POLAR_TWS_OVERRIDE_KEY) || {days:{}, races:{}}; }
 function dayOverrideKeyFromEvent(event, di){ return `${event?.id||'ev'}_d${di ?? event?._dayIdx ?? 0}`; }
 function raceOverrideKeyFromRd(rd){ return `${rd?.event?.id||'ev'}_d${rd?.event?._dayIdx ?? rd?._dayIdx ?? 0}_r${rd?.raceNum ?? 0}`; }
@@ -765,9 +767,9 @@ function updatePolarStatusLabel(){
 function polarSpeed(twa, tws){
   const polar = getPolarGrid();
   let t = Math.round(Math.abs(twa));
-  if(t < M32_POLAR_TWA_MIN) t = M32_POLAR_TWA_MIN;
-  if(t > M32_POLAR_TWA_MAX) t = M32_POLAR_TWA_MAX;
-  const twsList = M32_POLAR_TWS;
+  if(t < BOAT_POLAR_TWA_MIN) t = BOAT_POLAR_TWA_MIN;
+  if(t > BOAT_POLAR_TWA_MAX) t = BOAT_POLAR_TWA_MAX;
+  const twsList = BOAT_POLAR_TWS;
   if(tws <= twsList[0]) return +(polar[String(twsList[0])][String(t)]||0);
   if(tws >= twsList[twsList.length-1]) return +(polar[String(twsList[twsList.length-1])][String(t)]||0);
   let lo=twsList[0], hi=twsList[twsList.length-1];
@@ -780,7 +782,7 @@ function polarSpeed(twa, tws){
 
 function estimateTWS(observedSOG, reachTWA){
   let bestTWS=12, bestDiff=999;
-  for(const tws of M32_POLAR_TWS){
+  for(const tws of BOAT_POLAR_TWS){
     const diff=Math.abs(polarSpeed(reachTWA,tws)-observedSOG);
     if(diff<bestDiff){bestDiff=diff;bestTWS=tws;}
   }
@@ -809,14 +811,14 @@ function collectPolarObservationsFromRace(rd){
       const acc=Math.abs(sog1-sog0);
       if(turn>12 || hdgAgree>22 || acc>1.2) continue;
       const twa=Math.abs(((cog-rd.WF+180+360)%360)-180);
-      if(twa<M32_POLAR_TWA_MIN || twa>M32_POLAR_TWA_MAX) continue;
+      if(twa<BOAT_POLAR_TWA_MIN || twa>BOAT_POLAR_TWA_MAX) continue;
       const tws=manualTws;
       const conf=(Math.max(0, 1 - turn/18) * Math.max(0, 1 - hdgAgree/30) * Math.max(0, 1 - acc/1.8)) * (twsInfo.source==='race'?1:0.96);
       if(conf < 0.45) continue;
-      const twsBin=nearestGrid(tws, M32_POLAR_TWS), twaBin=Math.round(twa);
+      const twsBin=nearestGrid(tws, BOAT_POLAR_TWS), twaBin=Math.round(twa);
       const id=polarObsId(rd, sail, p.ts);
       if(obs[id]) continue;
-      obs[id]={id, className:'M32', eventId:rd.event?.id||'', day:rd.event?.label||'', dayIdx:rd.event?._dayIdx||0, raceNum:rd.raceNum, sail, ts:p.ts, twa:twaBin, tws:twsBin, bsp:+sog.toFixed(2), conf:+conf.toFixed(3), wf:+rd.WF.toFixed(1), twsSource:twsInfo.source};
+      obs[id]={id, className:BOAT_CLASS, eventId:rd.event?.id||'', day:rd.event?.label||'', dayIdx:rd.event?._dayIdx||0, raceNum:rd.raceNum, sail, ts:p.ts, twa:twaBin, tws:twsBin, bsp:+sog.toFixed(2), conf:+conf.toFixed(3), wf:+rd.WF.toFixed(1), twsSource:twsInfo.source};
     }
   }
   store.updatedAt=Date.now();
@@ -845,7 +847,7 @@ function buildPolarCandidateFromStore(){
     changes.push({tws:+tws,twa:+twa,old:oldV,new:newV,delta,samples:arr.length});
   }
   changes.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  const cand={className:'M32', createdAt:Date.now(), source:'proposal', polar:candidate, summary:{observations:obs.length, changedBins:changes.length, topChanges:changes.slice(0,20)}, changes};
+  const cand={className:BOAT_CLASS, createdAt:Date.now(), source:'proposal', polar:candidate, summary:{observations:obs.length, changedBins:changes.length, topChanges:changes.slice(0,20)}, changes};
   safeLocalSet(POLAR_CANDIDATE_KEY, cand);
   updatePolarStatusLabel();
   return cand;
@@ -879,7 +881,7 @@ No material changes proposed.`);
   }
 }
 
-const M32_BEAM = 5.54;
+
 
 // Race cache: keyed by eventId+raceNum
 const raceCache = {};
@@ -953,31 +955,18 @@ function ptAtTime(track, ts){
 
 function circMean(angles){let sx=0,sy=0;for(const a of angles){sx+=Math.cos(a*D2R);sy+=Math.sin(a*D2R)}return(Math.atan2(sy,sx)/D2R+360)%360}
 
-// ─── REACH MARK: find from lead boat (#63) bear-away, offset to port side ───
-// The mark is passed on the PORT (left) side of the boat.
-// GPS is at boat centre → mark position = GPS offset half-beam (2.77m) to port.
-// Port direction = boat_heading - 90°.
-// This single fixed position is then used for ALL boats.
-
-// ─── REACH MARK INFERENCE CONFIGURATION (tune here) ───
+// Reach mark inference removed — W/L upwind course
+// OCS detection config (kept)
 const RM_CFG = {
-  OCS_THRESHOLD_M:    2,    // metres; boats < −2 m at gun or crossing within 5s = OCS
-  OCS_POST_SECS:      5,    // seconds after gun to check for OCS crossing
-  TURN_WINDOW_START:  10,   // seconds after gun to start looking for bear-away
-  TURN_WINDOW_END:    180,  // seconds; expand to 240 if no event found
-  TURN_ANGLE_DEG:     55,   // minimum cumulative heading change to count as bear-away
-  TURN_RATE_DEG_S:    8,    // minimum heading change rate (deg/sec) during event
-  TURN_RATE_SECS:     2,    // rate must be sustained for this many seconds
-  MIN_SPEED_KTS:      4,    // boat must stay above this during the turn
-  MARK_PASS_RADIUS_M: 60,   // accept a boat as "passing mark" if within this distance
-  DIST_ACCEPT_M:      70,   // sanity check: at least N boats within this radius
-  SANITY_N:           3,    // minimum fleet boats needed for HIGH confidence
-  APEX_KERNEL:        7,    // number of samples around apex used for centroid (odd)
-  BEAM_OFFSET_M:      2.77, // M32 half-beam; offset mark to port from GPS track
-  SMOOTH_WIN:         4,    // moving-average window for heading smoothing
+  OCS_THRESHOLD_M: 2,
+  OCS_POST_SECS: 5,
+  DIST_ACCEPT_M: 50,
+  MARK_PASS_RADIUS_M: 60,
+  APEX_KERNEL: 3,
+  BEAM_OFFSET_M: 1.5,
+  SANITY_N: 3,
 };
 
-// ─── GEOMETRY HELPERS ───
 function offsetPos(lat,lon,bearingDeg,distM){
   const R=RE,brR=bearingDeg*D2R,laR=lat*D2R;
   const nlat=Math.asin(Math.sin(laR)*Math.cos(distM/R)+Math.cos(laR)*Math.sin(distM/R)*Math.cos(brR));
@@ -1047,75 +1036,7 @@ function detectOCS(tracks, gunTs, RC, PIN){
 
 // ─── B/C) BEAR-AWAY DETECTION for one boat ───
 // Returns {found, tStart, tEnd, tApex, apexRate, relaxed} or null.
-function detectBearAway(track, gunTs, cfg, relax){
-  const factor = relax ? 0.75 : 1.0;
-  const ANGLE = cfg.TURN_ANGLE_DEG * factor;
-  const RATE  = cfg.TURN_RATE_DEG_S * factor;
-  const RSECS = cfg.TURN_RATE_SECS;
-  const SPEED = cfg.MIN_SPEED_KTS * factor;
-  const winEnd = (relax ? 240 : cfg.TURN_WINDOW_END) * 1000 + gunTs;
-  const winStart = cfg.TURN_WINDOW_START * 1000 + gunTs;
-
-  // Extract window, smooth headings
-  const seg = track.filter(p => p.ts >= winStart && p.ts <= winEnd);
-  if(seg.length < 5) return null;
-
-  const hdgs  = smoothHeadings(seg.map(p=>p.hdg), cfg.SMOOTH_WIN);
-  const times = seg.map(p => p.ts);
-  const sogs  = seg.map(p => p.sog * 0.539957);
-
-  // Compute instantaneous heading-change-rate (deg/sec) between adjacent samples
-  const rates = [0];
-  for(let i=1;i<seg.length;i++){
-    const dt = (times[i]-times[i-1])/1000;
-    if(dt <= 0){ rates.push(rates[i-1]); continue; }
-    rates.push(Math.abs(angDiff(hdgs[i], hdgs[i-1])) / dt);
-  }
-
-  // Slide a window looking for a sustained turn
-  for(let i=1;i<seg.length;i++){
-    // Only look at the heading change direction to avoid double-counting tacks
-    // A bear-away is a turn to a broader angle → heading increases relative to wind
-    // We don't assume wind direction here; just look for a large SUSTAINED change
-    if(rates[i] < RATE) continue;
-    if(sogs[i] < SPEED) continue;
-
-    // Accumulate heading change from this point
-    let cumHdg = 0;
-    let sustainedSecs = 0;
-    let maxRate = 0;
-    let apexIdx = i;
-    let tEnd = i;
-
-    for(let j=i;j<seg.length;j++){
-      const dt = j>0 ? (times[j]-times[j-1])/1000 : 0;
-      const dh = Math.abs(angDiff(hdgs[j], hdgs[Math.max(0,j-1)]));
-      cumHdg += dh;
-      if(rates[j] >= RATE){
-        sustainedSecs += dt;
-        if(rates[j] > maxRate){ maxRate = rates[j]; apexIdx = j; }
-      }
-      if(sogs[j] < SPEED * 0.7) break; // speed collapsed → not this event
-      if(cumHdg > ANGLE && sustainedSecs >= RSECS){
-        tEnd = j;
-        return {
-          found: true,
-          tStart: times[i],
-          tEnd:   times[tEnd],
-          tApex:  times[apexIdx],
-          apexIdx,
-          segStart: winStart,
-          seg, hdgs, times, rates, sogs,
-          cumHdg, maxRate,
-          relaxed: !!relax,
-        };
-      }
-      // If rate dropped to near zero, stop accumulating
-      if(j > i+3 && rates[j] < RATE*0.3) break;
-    }
-  }
-  return null;
-}
+function detectBearAway(){ return null; } // removed for W/L
 
 // ─── D) INFER MARK POSITION FROM TURN APEX ───
 // Weighted centroid of samples around apex, offset to port by half-beam.
@@ -1206,131 +1127,7 @@ function computeReachTimes(tracks, markLat, markLon, gunTs){
 
 // ─── MASTER: findReachMark ───
 // Returns rm object compatible with the rest of the report PLUS rmInference metadata.
-function findReachMark(tracks, gunTs, WWGATE, LWGATE, MID){
-  const GUN = gunTs || window.GUN || 0;
-  const RC  = window.RC, PIN = window.PIN;
-
-  // A) OCS detection
-  const ocsBoats = detectOCS(tracks, GUN, RC, PIN);
-
-  // B) Select candidates: non-OCS boats, sorted by earliest movement after gun
-  const allSails = Object.keys(tracks).filter(s => tracks[s] && tracks[s].length >= 5);
-  const cleanSails = allSails.filter(s => !ocsBoats.has(s));
-  const trySails = cleanSails.length >= 1 ? cleanSails : allSails; // fallback: all boats
-  const forcedFallback = cleanSails.length === 0;
-
-  // Sort candidates by how early they moved away from start (proxy: distance from start at T+20s)
-  const startPt = MID || (RC && PIN ? {lat:(RC.lat+PIN.lat)/2,lon:(RC.lon+PIN.lon)/2} : null);
-  const ranked = startPt ? [...trySails].sort((a,b)=>{
-    const pa = ptAtTime(tracks[a], GUN+20000);
-    const pb = ptAtTime(tracks[b], GUN+20000);
-    const da = pa ? hav(pa.lat,pa.lon,startPt.lat,startPt.lon) : 0;
-    const db = pb ? hav(pb.lat,pb.lon,startPt.lat,startPt.lon) : 0;
-    return db - da; // furthest from start = earliest clean leader
-  }) : trySails;
-
-  // C/D) Try candidates in order until we find a clean bear-away
-  let ev = null, candidateSail = null, markPos2 = null, usedRelax = false;
-
-  for(const sail of ranked.slice(0, 4)){ // try top-4 candidates
-    const t = tracks[sail];
-    // Try strict first, then relaxed
-    ev = detectBearAway(t, GUN, RM_CFG, false);
-    if(!ev){ ev = detectBearAway(t, GUN, RM_CFG, true); usedRelax = true; }
-    if(ev){ candidateSail = sail; markPos2 = inferMarkFromApex(ev); break; }
-    usedRelax = false;
-  }
-
-  // E) Fleet sanity check + fallback if weak
-  let sanity = {passCount:0, minDists:{}};
-  let confidence = 'LOW';
-  let reasonParts = [];
-  let rmLat, rmLon, t_s;
-
-  if(ev && markPos2){
-    sanity = fleetSanityCheck(tracks, ocsBoats, candidateSail, markPos2.lat, markPos2.lon, GUN);
-
-    // If sanity is weak, try second candidate
-    if(sanity.passCount < RM_CFG.SANITY_N && ranked.length > 1){
-      for(const sail of ranked.slice(1, 5)){
-        if(sail === candidateSail) continue;
-        const t2 = tracks[sail];
-        const ev2 = detectBearAway(t2, GUN, RM_CFG, false) || detectBearAway(t2, GUN, RM_CFG, true);
-        if(!ev2) continue;
-        const mp2 = inferMarkFromApex(ev2);
-        const san2 = fleetSanityCheck(tracks, ocsBoats, sail, mp2.lat, mp2.lon, GUN);
-        if(san2.passCount > sanity.passCount){
-          ev = ev2; candidateSail = sail; markPos2 = mp2; sanity = san2;
-        }
-        if(sanity.passCount >= RM_CFG.SANITY_N) break;
-      }
-    }
-
-    rmLat = markPos2.lat; rmLon = markPos2.lon;
-    t_s   = (ev.tApex - GUN) / 1000;
-
-    // Confidence
-    if(!forcedFallback && !usedRelax && sanity.passCount >= RM_CFG.SANITY_N) confidence = 'HIGH';
-    else if(sanity.passCount >= Math.ceil(RM_CFG.SANITY_N/2)) confidence = 'MEDIUM';
-    else confidence = 'LOW';
-
-    reasonParts.push(`inferred from ${ocsBoats.has(candidateSail)?'fallback':'non-OCS'} boat #${candidateSail}`);
-    if(usedRelax) reasonParts.push('relaxed thresholds');
-    reasonParts.push(`${sanity.passCount} boats within ${RM_CFG.DIST_ACCEPT_M}m`);
-    if(forcedFallback) reasonParts.push('all boats OCS — fallback used');
-
-  } else {
-    // Complete fallback: use boat furthest from start at T+50
-    confidence = 'LOW';
-    let bestSail2 = null, bestD2 = -1;
-    for(const sail of allSails){
-      const t = tracks[sail];
-      const pts = t.filter(p => p.ts >= GUN && p.ts <= GUN+50000);
-      let d = 0;
-      for(let i=1;i<pts.length;i++) d += hav(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon);
-      if(d > bestD2){ bestD2=d; bestSail2=sail; }
-    }
-    if(bestSail2){
-      const pt = ptAtTime(tracks[bestSail2], GUN+50000);
-      if(pt){
-        const portBrg = (pt.hdg - 90 + 360) % 360;
-        const mk = offsetPos(pt.lat, pt.lon, portBrg, RM_CFG.BEAM_OFFSET_M);
-        rmLat = mk.lat; rmLon = mk.lon; t_s = 50;
-        candidateSail = bestSail2;
-      }
-    }
-    reasonParts.push('no bear-away detected — T+50 fallback');
-  }
-
-  if(!rmLat) return null; // complete failure
-
-  // F) Per-boat reach mark times
-  const reachTimesNew = computeReachTimes(tracks, rmLat, rmLon, GUN);
-
-  // Build result compatible with existing code
-  const rm = {
-    lat: rmLat, lon: rmLon,
-    boat_lat: rmLat, boat_lon: rmLon,
-    ts: GUN + t_s*1000, t_s,
-    hdg_before: ev ? ev.seg[Math.max(0,ev.apexIdx-1)]?.hdg : null,
-    hdg_after:  ev ? ev.seg[Math.min(ev.seg.length-1,ev.apexIdx+1)]?.hdg : null,
-    sail: candidateSail,
-    // ── inference metadata for info box ──
-    inference: {
-      confidence,
-      reason: reasonParts.join('; '),
-      candidateSail,
-      ocsBoats: [...ocsBoats],
-      passCount: sanity.passCount,
-      minDists: sanity.minDists,
-      bearAwayFound: !!ev,
-      relaxed: usedRelax,
-    },
-    reachTimes: reachTimesNew,
-  };
-
-  return rm;
-}
+function findReachMark(){ return null; } // removed for W/L
 
 // For a given boat, find the timestamp when it is closest to the fixed reach mark.
 // Now delegates to the precomputed reachTimes from findReachMark.
@@ -1653,7 +1450,7 @@ function rotProj(pts,W,H,px,py){
 
 // ─── DRAW CATAMARAN (M32 favicon silhouette, 9.68m x 5.54m) ───
 // Matches the favicon: two curved hulls with pointed bow+stern, two crossbeams
-function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge){
+function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge,bowOffset=true){
   // Cape 31 plan-view: elongated sharp bow, max beam ~55% aft of bow, wide flat transom
   // Based on actual boat plan — like a stretched teardrop with flat stern
   const L = Math.max(4, 11/mpp);    // half-length in pixels
@@ -2612,7 +2409,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   }
 
   // Reach mark detection
-  const rm = WWGATE && LWGATE && MID ? findReachMark(tracks, gunTs, WWGATE, LWGATE, MID) : null;
+  const rm = null; // W/L course — no reach mark
 
   // Wind inference — race-level, later blended with same-day consensus
   const raceEnd = nextGunTs ? Math.min(gunTs + 1200000, nextGunTs - 1000) : gunTs + 1200000;
@@ -2620,7 +2417,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const WF_OBJ = WF_RACE_OBJ;
   const WF = WF_RACE_OBJ ? WF_RACE_OBJ.wf : null;
 
-  // Reach times — now computed inside findReachMark via computeReachTimes()
+
   // rm.reachTimes is a map of sail -> {markTime, minDist, conf}
   const reachTimes = {};
   if(rm && rm.reachTimes){
@@ -3164,10 +2961,10 @@ function computeOptimalStartR(rd){
     const absTWA=twa>180?360-twa:twa;
     let twsInfo=getEffectiveTwsInfo(rd);
     let tws=Number.isFinite(twsInfo.tws) ? twsInfo.tws : 12;
-    if(!Number.isFinite(twsInfo.tws) && avgReachSOG && absTWA>=M32_POLAR_TWA_MIN && absTWA<=M32_POLAR_TWA_MAX){
+    if(!Number.isFinite(twsInfo.tws) && avgReachSOG && absTWA>=BOAT_POLAR_TWA_MIN && absTWA<=BOAT_POLAR_TWA_MAX){
       tws=estimateTWS(avgReachSOG, absTWA);
     }
-    const spd=(absTWA>=M32_POLAR_TWA_MIN&&absTWA<=M32_POLAR_TWA_MAX)
+    const spd=(absTWA>=BOAT_POLAR_TWA_MIN&&absTWA<=BOAT_POLAR_TWA_MAX)
       ? polarSpeed(absTWA, tws) : (avgReachSOG||12);
     const spdMs=spd*0.514444;
     const t=spdMs>0?dist/spdMs:9999;
@@ -3419,7 +3216,7 @@ function drawGunR(rd){
     const bx=tX(d.rx),by=tY(d.ry);
     // OCS: draw pulsing shaded circle behind boat
     if(isOCS){
-      const r=Math.max(14,(M32_LEN/mpp)*0.9);
+      const r=Math.max(14,(BOAT_LOA/mpp)*0.9);
       ctx.save();
       ctx.beginPath();ctx.arc(bx,by,r,0,Math.PI*2);
       ctx.fillStyle='rgba(255,51,85,.18)';ctx.fill();
