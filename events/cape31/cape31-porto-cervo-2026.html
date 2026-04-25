@@ -2300,7 +2300,8 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       const cLon=cLons.reduce((a,b)=>a+b,0)/(cLons.length||1);
 
       // Wind direction estimate — use WF if available, else 0
-      const windEst = (WF_RACE_OBJ?.wf ?? 0);
+      // Wind unknown at this point in loadRace (WF_RACE_OBJ not yet declared)
+      const windEst = 0;
       const perpIdeal = (windEst + 90 + 360) % 360; // ideal line axis
 
       let bestScore = Infinity, bestRC = null, bestPIN = null;
@@ -2343,7 +2344,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       const cLon = fleetPts.reduce((a,b)=>a+b.lon,0)/fleetPts.length;
       const markKeys = Object.keys(markPos);
       // Score each pair: minimize (avg dist to fleet) + penalize deviation from perpendicular to wind
-      const windDir = (WF_RACE_OBJ?.wf ?? 0) * D2R;
+      const windDir = 0; // wind not yet inferred at this point
       const perpBrg = (windDir + Math.PI/2 + 2*Math.PI) % (2*Math.PI); // perpendicular to wind
       let bestScore = Infinity, bestRC = null, bestPIN = null;
       for(let i=0;i<markKeys.length;i++){
