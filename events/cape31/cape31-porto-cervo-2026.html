@@ -2468,7 +2468,8 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       const squareAxis=(windDir+90+360)%360;
       let bias=((lineAxis-squareAxis+180+360)%360)-180;
       const lineLenM=hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
-      const secsPerDeg=lineLenM/170;
+      const boatSpeedMs=5*0.5144;
+      const secsPerDeg=lineLenM/(57.3*boatSpeedMs);
       startBias={
         windDir:+windDir.toFixed(1), lineAxis:+lineAxis.toFixed(1),
         biasDeg:+bias.toFixed(1), biasSecs:+(Math.abs(bias)*secsPerDeg).toFixed(1),
@@ -2477,7 +2478,6 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
         conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
       };
       // Store inferred wind back if better than existing
-      console.log('[bias] windDir='+windDir+' bias='+bias+' favoured='+startBias.favoured+' conf='+startBias.conf);
       if((WF==null || inferConf>=8) && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
     }
   }} catch(e){ console.error('startBias error:', e); }
@@ -2836,7 +2836,7 @@ function renderRacePanel(panelEl, rd){
   const sb = rd.startBias;
   if(!sb) return '';
   const col = sb.favoured==='RC' ? 'var(--orange)' : sb.favoured==='PIN' ? 'var(--teal)' : 'var(--green)';
-  const biasStr = sb.favoured==='SQUARE' ? 'Square' : sb.favoured+' +'+sb.biasSecs+'s ('+(sb.biasDeg>0?'+':'')+sb.biasDeg+'°)';
+  const biasStr = sb.favoured==='SQUARE' ? 'SQUARE' : sb.favoured+' '+(sb.biasDeg>0?'+':'')+sb.biasDeg+'° (~'+sb.biasSecs+'s)';
   const windStr = 'Wind '+sb.windDir+'° (inferred '+sb.conf+')';
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px;border:1px solid var(--border)">'
     +'<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Start Line Bias</div>'
