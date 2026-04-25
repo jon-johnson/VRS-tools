@@ -2423,62 +2423,175 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const WF = WF_RACE_OBJ ? WF_RACE_OBJ.wf : null;
 
   // ── START LINE BIAS ─────────────────────────────────────────────
-  // Infer wind from fleet upwind headings in first 5 min after gun,
-  // then compute which end of line is favoured geometrically.
+  // Approach: on upwind leg, fleet headings cluster around two peaks
+  // ~80° apart (port and starboard tacks). Wind direction = bisector
+  // of the two peaks. No need to pre-classify or know line axis first.
   let startBias = null;
   try{ if(RC && PIN){
-    const bStart = gunTs + 20000, bEnd = gunTs + 300000;
-    const portHdgs = [], stbdHdgs = [];
-    const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
+    const bStart = gunTs + 30000;   // skip first 30s of confusion
+    const bEnd   = gunTs + 180000;  // 3 min — before boats reach WW
+
+    // Collect stable upwind headings (sog > 3kt, 5-sample agreement)
+    const headings = [];
     for(const [,t] of Object.entries(tracks)){
       const seg = t.filter(p => p.ts >= bStart && p.ts <= bEnd);
       for(let i=2;i<seg.length-2;i++){
         const p = seg[i];
         const sogKt = (p.sog||0)*0.539957;
-        if(sogKt < 2.5) continue;
+        if(sogKt < 3) continue;
         const hdgs5 = [seg[i-2],seg[i-1],p,seg[i+1],seg[i+2]].map(s=>s.hdg||s.cog||0);
         let sx2=0,sy2=0;
         for(const h of hdgs5){sx2+=Math.cos(h*D2R);sy2+=Math.sin(h*D2R);}
-        if(Math.hypot(sx2,sy2)/5 < 0.92) continue; // turning — skip
+        if(Math.hypot(sx2,sy2)/5 < 0.95) continue;
         const cog = p.hdg||p.cog||0;
-        const w = Math.min(3, sogKt/5);
-        const rel = ((cog - lineAxis + 360) % 360);
-        if(rel < 180) stbdHdgs.push({a:cog,w});
-        else           portHdgs.push({a:cog,w});
+        headings.push({a:cog, w:Math.min(3, sogKt/5)});
       }
     }
-    const circMeanW2 = (items) => {
-      if(!items.length) return null;
-      let sx=0,sy=0,sw=0;
-      for(const it of items){sx+=Math.cos(it.a*D2R)*it.w;sy+=Math.sin(it.a*D2R)*it.w;sw+=it.w;}
-      if(!sw) return null;
-      return(Math.atan2(sy/sw,sx/sw)/D2R+360)%360;
-    };
-    const mpPort = circMeanW2(portHdgs), mpStbd = circMeanW2(stbdHdgs);
-    let windDir = null;
-    if(mpPort!=null && mpStbd!=null){
-      const bsx=Math.cos(mpPort*D2R)+Math.cos(mpStbd*D2R);
-      const bsy=Math.sin(mpPort*D2R)+Math.sin(mpStbd*D2R);
-      windDir=(Math.atan2(bsy,bsx)/D2R+360)%360;
-    } else if(mpStbd!=null){ windDir=mpStbd; }
-    else if(mpPort!=null){ windDir=mpPort; }
-    const inferConf=Math.min(portHdgs.length,stbdHdgs.length);
-    if(WF!=null && inferConf<5) windDir=WF; // fallback to existing wind estimate
-    if(windDir!=null){
-      const squareAxis=(windDir+90+360)%360;
-      let bias=((lineAxis-squareAxis+180+360)%360)-180;
-      const lineLenM=hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
-      const boatSpeedMs=5*0.5144;
-      const secsPerDeg=lineLenM/(57.3*boatSpeedMs);
-      startBias={
-        windDir:+windDir.toFixed(1), lineAxis:+lineAxis.toFixed(1),
-        biasDeg:+bias.toFixed(1), biasSecs:+(Math.abs(bias)*secsPerDeg).toFixed(1),
-        favoured:Math.abs(bias)<1.5?'SQUARE':bias>0?'RC':'PIN',
-        portN:portHdgs.length, stbdN:stbdHdgs.length,
-        conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
+
+    // Build heading histogram in 5° bins
+    const BIN = 5;
+    const NBINS = 360/BIN;
+    const hist = new Array(NBINS).fill(0);
+    for(const h of headings){
+      const b = Math.floor(h.a/BIN) % NBINS;
+      hist[b] += h.w;
+    }
+
+    // Smooth histogram with 3-bin moving average (handles wraparound)
+    const smooth = new Array(NBINS).fill(0);
+    for(let i=0;i<NBINS;i++){
+      smooth[i] = (hist[(i-1+NBINS)%NBINS] + hist[i] + hist[(i+1)%NBINS])/3;
+    }
+
+    // Find top 4 local maxima
+    const peaks = [];
+    for(let i=0;i<NBINS;i++){
+      const prev = smooth[(i-1+NBINS)%NBINS];
+      const next = smooth[(i+1)%NBINS];
+      if(smooth[i] > prev && smooth[i] >= next && smooth[i] > 0){
+        peaks.push({bin:i, deg:i*BIN+BIN/2, val:smooth[i]});
+      }
+    }
+    peaks.sort((a,b)=>b.val-a.val);
+
+    // Find best pair of peaks 60-100° apart (typical upwind tack angle 70-90°)
+    let bestPair = null, bestScore = 0;
+    for(let i=0;i<Math.min(peaks.length, 8);i++){
+      for(let j=i+1;j<Math.min(peaks.length, 8);j++){
+        let dAng = Math.abs(peaks[i].deg - peaks[j].deg);
+        if(dAng > 180) dAng = 360 - dAng;
+        if(dAng < 60 || dAng > 100) continue;
+        const score = peaks[i].val * peaks[j].val;
+        if(score > bestScore){ bestScore = score; bestPair = [peaks[i], peaks[j]]; }
+      }
+    }
+
+    let windDir = null, conf = 'LOW', portMean = null, stbdMean = null;
+    if(bestPair){
+      // Refine each peak by weighted circular mean within ±15° of peak centre
+      function refinePeak(centerDeg){
+        let sx=0,sy=0,sw=0;
+        for(const h of headings){
+          let d = h.a - centerDeg;
+          while(d > 180) d -= 360;
+          while(d < -180) d += 360;
+          if(Math.abs(d) > 15) continue;
+          sx += Math.cos(h.a*D2R)*h.w;
+          sy += Math.sin(h.a*D2R)*h.w;
+          sw += h.w;
+        }
+        if(!sw) return null;
+        return {mean: (Math.atan2(sy,sx)/D2R+360)%360, weight: sw};
+      }
+      const r0 = refinePeak(bestPair[0].deg);
+      const r1 = refinePeak(bestPair[1].deg);
+      if(r0 && r1){
+        // Determine which is port and which is stbd via the line axis
+        const lineAxisTmp = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
+        // Wind = bisector of the two peaks (circular average)
+        const bsx = Math.cos(r0.mean*D2R)*r0.weight + Math.cos(r1.mean*D2R)*r1.weight;
+        const bsy = Math.sin(r0.mean*D2R)*r0.weight + Math.sin(r1.mean*D2R)*r1.weight;
+        // Need the bisector pointing INTO wind (upwind)
+        // The bisector of two upwind tacks points in the direction the fleet is sailing,
+        // which is roughly INTO the wind. Wind direction (FROM) = bisector + 180°? No —
+        // wind FROM = direction sailing toward, since boats sail INTO wind upwind.
+        windDir = (Math.atan2(bsy,bsx)/D2R + 360) % 360;
+
+        // Tag tacks
+        const rel0 = ((r0.mean - windDir + 360) % 360);
+        if(rel0 < 180){ stbdMean = r0.mean; portMean = r1.mean; }
+        else            { portMean = r0.mean; stbdMean = r1.mean; }
+
+        const totalSamples = headings.length;
+        conf = totalSamples >= 200 ? 'HIGH' : totalSamples >= 80 ? 'MED' : 'LOW';
+      }
+    }
+
+    // Fallback to existing wind estimate if we couldn't infer
+    if(windDir == null && WF != null) windDir = WF;
+
+    if(windDir != null){
+      const lineAxis = brgFn(RC.lat,RC.lon,PIN.lat,PIN.lon);
+      // Square line axis = perpendicular to wind. Two perp values: wind+90 and wind-90.
+      // Pick the one closest to actual line axis to avoid 180° ambiguity.
+      const perp1 = (windDir + 90 + 360) % 360;
+      const perp2 = (windDir - 90 + 360) % 360;
+      function angDiff(a,b){let d=a-b;while(d>180)d-=360;while(d<-180)d+=360;return d;}
+      const d1 = Math.abs(angDiff(lineAxis, perp1));
+      const d2 = Math.abs(angDiff(lineAxis, perp2));
+      const squareAxis = d1 < d2 ? perp1 : perp2;
+      const bias = angDiff(lineAxis, squareAxis);  // signed degrees off square
+
+      // Time advantage: distance gain on favoured end / boat speed upwind
+      // Boat at lineLenM apart, bias degrees off square means upwind end is
+      // lineLenM * sin(bias) closer to wind. At 5kts upwind speed:
+      const lineLenM = hav(RC.lat,RC.lon,PIN.lat,PIN.lon);
+      const upwindAdvantageM = lineLenM * Math.abs(Math.sin(bias*D2R));
+      const boatSpeedMs = 5 * 0.5144;
+      const biasSecs = upwindAdvantageM / boatSpeedMs;
+
+      // Determine favoured end: bias > 0 means line axis is rotated CW from square,
+      // which means the END at the start of lineAxis (RC) is more upwind.
+      // Sign convention: lineAxis is RC→PIN. If bias>0, line rotated CW → PIN is downwind → RC favoured? No.
+      // Reasoning: square axis is the orientation where both ends are equally upwind.
+      // If we rotate line CW (positive bias), the END (PIN) moves CCW relative to wind,
+      // meaning PIN moves toward upwind. So bias > 0 = PIN favoured.
+      // Test: wind 340, square axis = 70 (perp closest to 302). Line 302. Bias = 302-70 = 232 → -128 normalized.
+      // That doesn't help. Use a direct geometric check instead:
+      // Project RC and PIN onto the wind direction. The one with larger projection is upwind.
+      const RCproj = RC.lat * Math.cos(windDir*D2R) - RC.lon * Math.sin(windDir*D2R) * Math.cos(RC.lat*D2R);
+      const PINproj = PIN.lat * Math.cos(windDir*D2R) - PIN.lon * Math.sin(windDir*D2R) * Math.cos(PIN.lat*D2R);
+      // Wind FROM direction: the end with HIGHER projection along wind direction is closer to upwind
+      // Actually: a unit vector pointing FROM wind direction toward downwind has components (-sin, -cos) in (lon, lat)
+      // We want projection of position onto (sin(wind), cos(wind)) to find which end is more upwind
+      // Use proper local-tangent metres:
+      const midLat = (RC.lat + PIN.lat) / 2;
+      const cosMid = Math.cos(midLat * D2R);
+      const RCx = RC.lon * 111320 * cosMid, RCy = RC.lat * 111320;
+      const PINx = PIN.lon * 111320 * cosMid, PINy = PIN.lat * 111320;
+      // Wind FROM direction: unit vector pointing AWAY from wind source
+      const windToX = Math.sin(windDir * D2R);
+      const windToY = Math.cos(windDir * D2R);
+      // Upwind direction = opposite of wind-to direction
+      const upX = -windToX, upY = -windToY;
+      const RCupwind = RCx * upX + RCy * upY;
+      const PINupwind = PINx * upX + PINy * upY;
+      const favoured = Math.abs(bias) < 1.5 ? 'SQUARE' : (RCupwind > PINupwind ? 'RC' : 'PIN');
+
+      startBias = {
+        windDir: +windDir.toFixed(1),
+        lineAxis: +lineAxis.toFixed(1),
+        biasDeg: +Math.abs(bias).toFixed(1),
+        biasSecs: +biasSecs.toFixed(1),
+        favoured,
+        portMean: portMean ? +portMean.toFixed(1) : null,
+        stbdMean: stbdMean ? +stbdMean.toFixed(1) : null,
+        nSamples: headings.length,
+        conf,
       };
-      // Store inferred wind back if better than existing
-      if((WF==null || inferConf>=8) && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
+
+      // Store inferred wind back if no existing or ours is more confident
+      if((WF == null || conf === 'HIGH') && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
     }
   }} catch(e){ console.error('startBias error:', e); }
 
@@ -2836,8 +2949,8 @@ function renderRacePanel(panelEl, rd){
   const sb = rd.startBias;
   if(!sb) return '';
   const col = sb.favoured==='RC' ? 'var(--orange)' : sb.favoured==='PIN' ? 'var(--teal)' : 'var(--green)';
-  const biasStr = sb.favoured==='SQUARE' ? 'SQUARE' : sb.favoured+' '+(sb.biasDeg>0?'+':'')+sb.biasDeg+'° (~'+sb.biasSecs+'s)';
-  const windStr = 'Wind '+sb.windDir+'° (inferred '+sb.conf+')';
+  const biasStr = sb.favoured==='SQUARE' ? 'SQUARE' : sb.favoured+' +'+sb.biasDeg+'° (~'+sb.biasSecs.toFixed(0)+'s)';
+  const windStr = 'Wind '+sb.windDir+'° ('+sb.conf+' · P:'+(sb.portMean||'?')+'° / S:'+(sb.stbdMean||'?')+'° · '+sb.nSamples+' samples)';
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px;border:1px solid var(--border)">'
     +'<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Start Line Bias</div>'
     +'<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:'+col+'">'+biasStr+'</div>'
