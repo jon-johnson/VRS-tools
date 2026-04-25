@@ -2550,30 +2550,17 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       const boatSpeedMs = 5 * 0.5144;
       const biasSecs = upwindAdvantageM / boatSpeedMs;
 
-      // Determine favoured end: bias > 0 means line axis is rotated CW from square,
-      // which means the END at the start of lineAxis (RC) is more upwind.
-      // Sign convention: lineAxis is RC→PIN. If bias>0, line rotated CW → PIN is downwind → RC favoured? No.
-      // Reasoning: square axis is the orientation where both ends are equally upwind.
-      // If we rotate line CW (positive bias), the END (PIN) moves CCW relative to wind,
-      // meaning PIN moves toward upwind. So bias > 0 = PIN favoured.
-      // Test: wind 340, square axis = 70 (perp closest to 302). Line 302. Bias = 302-70 = 232 → -128 normalized.
-      // That doesn't help. Use a direct geometric check instead:
-      // Project RC and PIN onto the wind direction. The one with larger projection is upwind.
-      const RCproj = RC.lat * Math.cos(windDir*D2R) - RC.lon * Math.sin(windDir*D2R) * Math.cos(RC.lat*D2R);
-      const PINproj = PIN.lat * Math.cos(windDir*D2R) - PIN.lon * Math.sin(windDir*D2R) * Math.cos(PIN.lat*D2R);
-      // Wind FROM direction: the end with HIGHER projection along wind direction is closer to upwind
-      // Actually: a unit vector pointing FROM wind direction toward downwind has components (-sin, -cos) in (lon, lat)
-      // We want projection of position onto (sin(wind), cos(wind)) to find which end is more upwind
-      // Use proper local-tangent metres:
+      // Determine favoured end by projecting RC and PIN onto upwind axis (in metres).
+      // The end with the higher projection is geometrically closer to wind source = favoured.
       const midLat = (RC.lat + PIN.lat) / 2;
       const cosMid = Math.cos(midLat * D2R);
       const RCx = RC.lon * 111320 * cosMid, RCy = RC.lat * 111320;
       const PINx = PIN.lon * 111320 * cosMid, PINy = PIN.lat * 111320;
-      // Wind FROM direction: unit vector pointing AWAY from wind source
-      const windToX = Math.sin(windDir * D2R);
-      const windToY = Math.cos(windDir * D2R);
-      // Upwind direction = opposite of wind-to direction
-      const upX = -windToX, upY = -windToY;
+      // Upwind direction: unit vector pointing TOWARD wind source.
+      // Wind FROM 35° means wind blows from bearing 35°, so upwind = bearing 35°.
+      // Bearing β as a unit vector in (East, North) = (sin β, cos β).
+      const upX = Math.sin(windDir * D2R);
+      const upY = Math.cos(windDir * D2R);
       const RCupwind = RCx * upX + RCy * upY;
       const PINupwind = PINx * upX + PINy * upY;
       const favoured = Math.abs(bias) < 1.5 ? 'SQUARE' : (RCupwind > PINupwind ? 'RC' : 'PIN');
