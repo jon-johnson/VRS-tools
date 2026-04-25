@@ -2447,13 +2447,13 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
         else           portHdgs.push({a:cog,w});
       }
     }
-    function circMeanW2(items){
+    const circMeanW2 = (items) => {
       if(!items.length) return null;
       let sx=0,sy=0,sw=0;
       for(const it of items){sx+=Math.cos(it.a*D2R)*it.w;sy+=Math.sin(it.a*D2R)*it.w;sw+=it.w;}
       if(!sw) return null;
       return(Math.atan2(sy/sw,sx/sw)/D2R+360)%360;
-    }
+    };
     const mpPort = circMeanW2(portHdgs), mpStbd = circMeanW2(stbdHdgs);
     let windDir = null;
     if(mpPort!=null && mpStbd!=null){
@@ -2477,6 +2477,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
         conf:inferConf>=10?'HIGH':inferConf>=5?'MED':'LOW',
       };
       // Store inferred wind back if better than existing
+      console.log('[bias] windDir='+windDir+' bias='+bias+' favoured='+startBias.favoured+' conf='+startBias.conf);
       if((WF==null || inferConf>=8) && WF_RACE_OBJ) WF_RACE_OBJ.wf = windDir;
     }
   }} catch(e){ console.error('startBias error:', e); }
