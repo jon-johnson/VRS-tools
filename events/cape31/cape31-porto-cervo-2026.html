@@ -524,7 +524,7 @@ tr:hover td{background:var(--bg3)}
 
 // ── Regatta title (shown in header and PDF) ──────────────────────
 const REGATTA_TITLE    = 'C31 R1 2026 Porto Cervo';
-const REGATTA_SUBTITLE = 'Porto Cervo, Sardinia · 23 Apr 2026 · CEST (UTC+2)';
+const REGATTA_SUBTITLE = 'Porto Cervo, Sardinia · 23-25 Apr 2026 · CEST (UTC+2)';
 
 // ── Race days ─────────────────────────────────────────────────────
 // Each entry = one day tab. Same event ID can appear multiple times
@@ -534,10 +534,11 @@ const REGATTA_SUBTITLE = 'Porto Cervo, Sardinia · 23 Apr 2026 · CEST (UTC+2)';
 const EVENTS = [
   {
     id: 'Wz4a9bhZz4qmu3Li7Yrm',
-    label: 'DAY 1',
+    label: 'PRACTICE',
     date: '2026-04-23',
     tz: 'CEST', tzOffset: 2,
     raceDay: 2,
+    isPractice: true,  // exclude from event averages
     dayStart: 1776932400000,
     dayEnd:   1776954000000,
     knownGuns: [
@@ -546,12 +547,41 @@ const EVENTS = [
       [5, 1776950400000],
     ]
   },
+  {
+    id: 'Wz4a9bhZz4qmu3Li7Yrm',
+    label: 'DAY 1',
+    date: '2026-04-24',
+    tz: 'CEST', tzOffset: 2,
+    raceDay: 3,
+    dayStart: 1777017600000,   // 2026-04-24 08:00 UTC
+    dayEnd:   1777046400000,   // 2026-04-24 16:00 UTC
+    knownGuns: [
+      [6, 1777024800000],   // 12:00 CEST
+      [7, 1777028400000],   // 13:00 CEST
+      [8, 1777032000000],   // 14:00 CEST
+    ]
+  },
+  {
+    id: 'Wz4a9bhZz4qmu3Li7Yrm',
+    label: 'DAY 2',
+    date: '2026-04-25',
+    tz: 'CEST', tzOffset: 2,
+    raceDay: 4,
+    dayStart: 1777104000000,   // 2026-04-25 08:00 UTC
+    dayEnd:   1777132800000,   // 2026-04-25 16:00 UTC
+    knownGuns: [
+      [10, 1777114800000],  // 13:00 CEST
+      [11, 1777115880000],  // 14:18 CEST
+      [12, 1777122180000],  // 16:03 CEST
+      [13, 1777125420000],  // 16:57 CEST
+    ]
+  },
 ];
 
 // ── Fleet config ──────────────────────────────────────────────────
 // EXCLUDED_BOATS: sail numbers to ignore (RC boat, bow boat, chase boat)
 const EXCLUDED_BOATS = ['001'];
-const BOATS_ALL = ['POR25682','ITA3176','GBR-3169','AUT 3165','FRA3151','TUR3150','NED 3138','GBR 082','GER 80','NED 67','HUN 63','GER42','IOM 31'];
+const BOATS_ALL = ['POR25682','ITA3176','GBR-3169','AUT 3165','FRA3151','TUR3150','NED 3138','GBR 082','GER 80','NED 67','HUN 63','GER42','IOM 31','GER3156'];
 
 // Boat colours — one per competing sail number
 const COL = {
@@ -568,6 +598,7 @@ const COL = {
   'HUN 63':   '#a78bfa',
   'GER42':    '#fb923c',
   'IOM 31':   '#4ade80',
+  'GER3156':  '#ec4899',
 };
 
 // Team names — sail number → team name (shown in tables and PDF)
@@ -585,13 +616,28 @@ const TEAM_NAMES = {
   'HUN 63':   'Black Battalion',
   'GER42':    'Black Pearl',
   'IOM 31':   'Shotgunn',
+  'GER3156':  'La Pericolosa',
 };
 
 // ── Official results ──────────────────────────────────────────────
 // Keyed by EVENTS index (0 = first day, 1 = second day, etc.)
 // then race number. Values are finishing positions (integers).
 // Use 99 for DNF/DNS/DSQ if needed.
-const OFFICIAL_RESULTS_BY_DAY = {};
+const OFFICIAL_RESULTS_BY_DAY = {
+  // Day 1 (4/24) — API races 6, 7, 8 (= score sheet races 1, 2, 3)
+  1: {
+    6: {"ITA3176": 3, "IOM 31": 6, "GBR 082": 1, "GBR-3169": 11, "GER 80": 4, "AUT 3165": 8, "TUR3150": 5, "GER3156": 2, "FRA3151": 12, "NED 67": 7, "NED 3138": 10, "HUN 63": 9, "GER42": 13, "POR25682": 14},
+    7: {"ITA3176": 2, "IOM 31": 9, "GBR 082": 3, "GBR-3169": 1, "GER 80": 6, "AUT 3165": 5, "TUR3150": 10, "GER3156": 7, "FRA3151": 4, "NED 67": 12, "NED 3138": 11, "HUN 63": 13, "GER42": 8, "POR25682": 14},
+    8: {"ITA3176": 8, "IOM 31": 4, "GBR 082": 2, "GBR-3169": 3, "GER 80": 10, "AUT 3165": 1, "TUR3150": 11, "GER3156": 7, "FRA3151": 9, "NED 67": 6, "NED 3138": 5, "HUN 63": 12, "GER42": 14, "POR25682": 13},
+  },
+  // Day 2 (4/25) — API races 10, 11, 12, 13 (= score sheet races 4, 5, 6, 7)
+  2: {
+    10: {"ITA3176": 1, "IOM 31": 3, "GBR 082": 4, "GBR-3169": 5, "GER 80": 7, "AUT 3165": 6, "TUR3150": 2, "GER3156": 12, "FRA3151": 8, "NED 67": 9, "NED 3138": 14, "HUN 63": 13, "GER42": 11, "POR25682": 10},
+    11: {"ITA3176": 8, "IOM 31": 1, "GBR 082": 12, "GBR-3169": 7, "GER 80": 5, "AUT 3165": 9, "TUR3150": 3, "GER3156": 4, "FRA3151": 2, "NED 67": 10, "NED 3138": 11, "HUN 63": 6, "GER42": 14, "POR25682": 13},
+    12: {"ITA3176": 1, "IOM 31": 4, "GBR 082": 11, "GBR-3169": 3, "GER 80": 5, "AUT 3165": 12, "TUR3150": 9, "GER3156": 10, "FRA3151": 6, "NED 67": 8, "NED 3138": 7, "HUN 63": 2, "GER42": 14, "POR25682": 13},
+    13: {"ITA3176": 1, "IOM 31": 2, "GBR 082": 9, "GBR-3169": 11, "GER 80": 3, "AUT 3165": 6, "TUR3150": 7, "GER3156": 8, "FRA3151": 14, "NED 67": 4, "NED 3138": 5, "HUN 63": 10, "GER42": 12, "POR25682": 13},
+  },
+};
 // Internal — do not edit
 let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 
@@ -4653,7 +4699,7 @@ function showEventSummary(){
   const lbl = document.getElementById('exportDayLabel');
   if(lbl) lbl.textContent = 'EVENT';
   // Gather all loaded races across all days
-  const allRaces = EVENTS.flatMap(ev => (ev._races||[]).filter(Boolean));
+  const allRaces = EVENTS.filter(ev => !ev.isPractice).flatMap(ev => (ev._races||[]).filter(Boolean));
   const panel = document.getElementById('dayPanelEvent');
   renderEventSummary(panel, allRaces);
 }
