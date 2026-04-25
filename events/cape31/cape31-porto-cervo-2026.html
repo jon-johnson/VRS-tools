@@ -2936,13 +2936,13 @@ function renderRacePanel(panelEl, rd){
   const sb = rd.startBias;
   if(!sb) return '';
   const col = sb.favoured==='RC' ? 'var(--orange)' : sb.favoured==='PIN' ? 'var(--teal)' : 'var(--green)';
-  const biasStr = sb.favoured==='SQUARE' ? 'SQUARE' : sb.favoured+' +'+sb.biasDeg+'° (~'+sb.biasSecs.toFixed(0)+'s)';
+  const biasStr = sb.favoured==='SQUARE' ? 'SQUARE LINE' : sb.favoured+' favoured · '+sb.biasDeg+'° · ~'+Math.round(sb.biasSecs)+'s';
   const windStr = 'Wind '+sb.windDir+'° ('+sb.conf+' · P:'+(sb.portMean||'?')+'° / S:'+(sb.stbdMean||'?')+'° · '+sb.nSamples+' samples)';
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px;border:1px solid var(--border)">'
     +'<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Start Line Bias</div>'
     +'<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:'+col+'">'+biasStr+'</div>'
     +'<div style="margin-left:auto;font-size:10px;color:var(--muted2)">'+windStr+'</div>'
-    +'<div style="font-size:10px;color:var(--muted2)">Line '+sb.lineAxis.toFixed(1)+'° · '+sb.portN+'P/'+sb.stbdN+'S samples</div>'
+    +'<div style="font-size:10px;color:var(--muted2)">Line '+sb.lineAxis.toFixed(1)+'°</div>'
     +'</div>';
 })()}
 <div class="sh">START REPORT — boat-by-boat</div>
