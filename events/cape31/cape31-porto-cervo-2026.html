@@ -2327,100 +2327,104 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   }
   if(markPos[eventGates.PIN_SN]) PIN = markPos[eventGates.PIN_SN];
 
-  // Fallback: if either mark missing, find the best pair automatically.
-  // Best pair = two stationary marks closest to fleet centroid at gun,
-  // whose axis is most perpendicular to upwind direction.
+  // ─── START LINE MARK SELECTION ────────────────────────────────────────
+  // Strategy:
+  //  1. If race has explicit override (in knownGuns 3rd element), use it.
+  //  2. Else if configured RC/PIN SNs are present in markPos, use them.
+  //  3. Else auto-detect: find pair where boats sit ON the line at gun
+  //     (minimum mean perpendicular distance from fleet to candidate line).
+  //
+  // Per-race override format in event.knownGuns:
+  //   [raceNum, gunMs, {RC: 27844, PIN: 28320}]
+  // Optional 3rd element with RC and PIN sail numbers.
+
+  // Step 1: per-race override
+  let raceMarkOverride = null;
+  if(event.knownGuns){
+    for(const g of event.knownGuns){
+      if(g[0] === raceNum && g[2] && (g[2].RC || g[2].PIN)){
+        raceMarkOverride = g[2];
+        break;
+      }
+    }
+  }
+  if(raceMarkOverride){
+    if(raceMarkOverride.RC && markPos[raceMarkOverride.RC]) RC = markPos[raceMarkOverride.RC];
+    if(raceMarkOverride.PIN && markPos[raceMarkOverride.PIN]) PIN = markPos[raceMarkOverride.PIN];
+  }
+
+  // Step 2: configured SNs (already attempted above for RC, redo PIN below if needed)
+  // (The earlier loop already tried eventGates.RC_SNS / PIN_SN before this block)
+
+  // Step 3: fleet-based auto-detection if either mark missing
+  let autoDetectedPair = null;
   if(!RC || !PIN){
     const allSNs = Object.keys(markPos);
     if(allSNs.length >= 2){
-      // Fleet centroid at gun time
-      let cLats=[], cLons=[];
-      for(const [,t] of Object.entries(tracks)){
-        const p = t.find(p=>Math.abs(p.ts-gunTs)<10000);
-        if(p){cLats.push(p.lat);cLons.push(p.lon);}
+      // Collect fleet positions in ±30s window around gun
+      const fleetPts = [];
+      for(const [sail, t] of Object.entries(tracks)){
+        if(EXCLUDED_BOATS.includes(sail)) continue;
+        for(const p of t){
+          if(Math.abs(p.ts - gunTs) <= 30000) fleetPts.push(p);
+        }
       }
-      const cLat=cLats.reduce((a,b)=>a+b,0)/(cLats.length||1);
-      const cLon=cLons.reduce((a,b)=>a+b,0)/(cLons.length||1);
+      if(fleetPts.length >= 5){
+        const cLat = fleetPts.reduce((a,b)=>a+b.lat,0)/fleetPts.length;
+        const cLon = fleetPts.reduce((a,b)=>a+b.lon,0)/fleetPts.length;
+        const cosLat = Math.cos(cLat * D2R);
+        const toM = (lat, lon) => ({x:(lon-cLon)*111320*cosLat, y:(lat-cLat)*111320});
 
-      // Wind direction estimate — use WF if available, else 0
-      // Wind unknown at this point in loadRace (WF_RACE_OBJ not yet declared)
-      const windEst = 0;
-      const perpIdeal = (windEst + 90 + 360) % 360; // ideal line axis
+        let bestScore = Infinity, bestPair = null;
+        for(let i=0;i<allSNs.length;i++){
+          const m1 = markPos[allSNs[i]];
+          if(hav(cLat,cLon,m1.lat,m1.lon) > 400) continue;
+          for(let j=i+1;j<allSNs.length;j++){
+            const m2 = markPos[allSNs[j]];
+            if(hav(cLat,cLon,m2.lat,m2.lon) > 400) continue;
+            const lineLen = hav(m1.lat,m1.lon,m2.lat,m2.lon);
+            if(lineLen < 80 || lineLen > 500) continue;
 
-      let bestScore = Infinity, bestRC = null, bestPIN = null;
-      for(let i=0;i<allSNs.length;i++){
-        for(let j=i+1;j<allSNs.length;j++){
-          const m1=markPos[allSNs[i]], m2=markPos[allSNs[j]];
-          const midLat=(m1.lat+m2.lat)/2, midLon=(m1.lon+m2.lon)/2;
-          const distToFleet=hav(cLat,cLon,midLat,midLon);
-          const lineAxis=brg(m1.lat,m1.lon,m2.lat,m2.lon);
-          const degOff=Math.min(Math.abs(lineAxis-perpIdeal)%180, 180-Math.abs(lineAxis-perpIdeal)%180);
-          // Score: prioritise close to fleet, then square to wind
-          const score = distToFleet * 0.5 + degOff * 15;
-          if(score < bestScore){
-            bestScore=score;
-            // RC = the mark closer to NE (upwind end typical for RC)
-            bestRC = m1.lat > m2.lat ? markPos[allSNs[i]] : markPos[allSNs[j]];
-            bestPIN = m1.lat > m2.lat ? markPos[allSNs[j]] : markPos[allSNs[i]];
+            // Mean perpendicular distance from fleet to line
+            const a = toM(m1.lat,m1.lon), b = toM(m2.lat,m2.lon);
+            const dx = b.x-a.x, dy = b.y-a.y;
+            const len = Math.hypot(dx,dy);
+            let perpSum = 0;
+            let alongMin = Infinity, alongMax = -Infinity;
+            for(const f of fleetPts){
+              const fp = toM(f.lat, f.lon);
+              const cross = (b.x-a.x)*(fp.y-a.y) - (b.y-a.y)*(fp.x-a.x);
+              perpSum += Math.abs(cross)/len;
+              const dot = ((fp.x-a.x)*dx + (fp.y-a.y)*dy) / (len*len);
+              if(dot < alongMin) alongMin = dot;
+              if(dot > alongMax) alongMax = dot;
+            }
+            const meanPerp = perpSum / fleetPts.length;
+            const alongSpan = alongMax - alongMin;
+            // Penalise lines where boats only span a small portion (suggests wrong line)
+            const score = meanPerp + Math.max(0, (0.4 - alongSpan)) * 80;
+            if(score < bestScore){
+              bestScore = score;
+              bestPair = {sn1: allSNs[i], sn2: allSNs[j], lineLen, meanPerp, alongSpan};
+            }
           }
         }
-      }
-      if(!RC && bestRC) RC = bestRC;
-      if(!PIN && bestPIN) PIN = bestPIN;
-      console.log('Auto mark detection: score='+bestScore?.toFixed(0)+' RC='+RC?.lat?.toFixed(4)+' PIN='+PIN?.lat?.toFixed(4));
-    }
-  }
-
-  // Fallback 1: (hardcoded marks removed — auto-select from telemetry)
-
-  // Smart start line auto-detection:
-  // If RC or PIN missing from configured SNs, find the best pair from ALL
-  // detected marks: pair closest to fleet at gun, axis most perpendicular to wind.
-  if(!RC || !PIN){
-    const fleetPts = [];
-    for(const [,t] of Object.entries(tracks)){
-      const p = t.find(p=>Math.abs(p.ts-gunTs)<10000);
-      if(p) fleetPts.push(p);
-    }
-    if(fleetPts.length >= 3){
-      const cLat = fleetPts.reduce((a,b)=>a+b.lat,0)/fleetPts.length;
-      const cLon = fleetPts.reduce((a,b)=>a+b.lon,0)/fleetPts.length;
-      const markKeys = Object.keys(markPos);
-      // Score each pair: minimize (avg dist to fleet) + penalize deviation from perpendicular to wind
-      const windDir = 0; // wind not yet inferred at this point
-      const perpBrg = (windDir + Math.PI/2 + 2*Math.PI) % (2*Math.PI); // perpendicular to wind
-      let bestScore = Infinity, bestRC = null, bestPIN = null;
-      for(let i=0;i<markKeys.length;i++){
-        for(let j=i+1;j<markKeys.length;j++){
-          const m1=markPos[markKeys[i]], m2=markPos[markKeys[j]];
-          const dist1=hav(cLat,cLon,m1.lat,m1.lon), dist2=hav(cLat,cLon,m2.lat,m2.lon);
-          const avgDist=(dist1+dist2)/2;
-          if(avgDist>500) continue; // ignore marks >500m from fleet (hard filter)
-          const lineDist=hav(m1.lat,m1.lon,m2.lat,m2.lon);
-          if(lineDist<50||lineDist>500) continue; // start lines are 50-500m
-          // Bearing of line
-          const dLon=(m2.lon-m1.lon)*D2R;
-          const y=Math.sin(dLon)*Math.cos(m2.lat*D2R);
-          const x=Math.cos(m1.lat*D2R)*Math.sin(m2.lat*D2R)-Math.sin(m1.lat*D2R)*Math.cos(m2.lat*D2R)*Math.cos(dLon);
-          const lineBrg=Math.atan2(y,x);
-          // Deviation from perpendicular to wind (smaller = more square)
-          const angDev = Math.min(
-            Math.abs(lineBrg-perpBrg),
-            Math.abs(lineBrg-perpBrg+Math.PI),
-            Math.abs(lineBrg-perpBrg-Math.PI)
-          );
-          const score = avgDist * 0.5 + angDev * 200;
-          if(score<bestScore){ bestScore=score; bestRC=markKeys[i]; bestPIN=markKeys[j]; }
+        if(bestPair){
+          // Pick RC = mark with higher latitude (typically RC boat is to NE of pin)
+          // This matches the convention; if wrong, user can override per-race.
+          const m1 = markPos[bestPair.sn1], m2 = markPos[bestPair.sn2];
+          const rcSN = m1.lat > m2.lat ? bestPair.sn1 : bestPair.sn2;
+          const pinSN = m1.lat > m2.lat ? bestPair.sn2 : bestPair.sn1;
+          if(!RC) RC = markPos[rcSN];
+          if(!PIN) PIN = markPos[pinSN];
+          autoDetectedPair = {RC: rcSN, PIN: pinSN, lineLen: Math.round(bestPair.lineLen), meanPerp: bestPair.meanPerp.toFixed(1)};
+          console.log('[mark detect] R'+raceNum+': RC='+rcSN+' PIN='+pinSN+' line='+Math.round(bestPair.lineLen)+'m perpDist='+bestPair.meanPerp.toFixed(1)+'m');
         }
       }
-      if(bestRC && bestPIN){
-        if(!RC) RC = markPos[bestRC];
-        if(!PIN) PIN = markPos[bestPIN];
-      }
     }
   }
 
-  // Fallback 2: infer gates from tracks if marks missing
+    // Fallback 2: infer gates from tracks if marks missing
   if(!WWGATE || !LWGATE){
     window.GUN = gunTs; // ensure GUN is set for inferGates
     const inf = inferGates ? inferGates(tracks, gunTs) : null;
@@ -2431,6 +2435,19 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const brgFn = (a,b,c,d) => brg(a,b,c,d);
 
   // Start line midpoint
+  // Identify which SNs were actually used for RC and PIN
+  let usedRCSN = null, usedPINSN = null;
+  if(RC){
+    for(const [sn, m] of Object.entries(markPos)){
+      if(m.lat === RC.lat && m.lon === RC.lon){ usedRCSN = sn; break; }
+    }
+  }
+  if(PIN){
+    for(const [sn, m] of Object.entries(markPos)){
+      if(m.lat === PIN.lat && m.lon === PIN.lon){ usedPINSN = sn; break; }
+    }
+  }
+
   const MID = RC && PIN ? {
     lat:(RC.lat+PIN.lat)/2, lon:(RC.lon+PIN.lon)/2
   } : null;
@@ -2908,7 +2925,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     RC, PIN, MID, rm, WF, WF_OBJ,
     WF_RACE_OBJ, WF_DAY_OBJ:null, WF_BLEND_OBJ:WF_OBJ,
     reachTimes, finTimes, l1stats, l1Order,
-    startStats, startBias, GUND, T50, dataQuality, vmgData,
+    startStats, startBias, GUND, T50, dataQuality, vmgData, usedRCSN, usedPINSN,
     rmInference: rm ? rm.inference : null,
     ocsFromTelemetry,
     raceNum, event, nextGunTs,
@@ -3032,7 +3049,7 @@ function renderRacePanel(panelEl, rd){
     +'<div style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Start Line Bias</div>'
     +'<div style="font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:'+col+'">'+biasStr+'</div>'
     +'<div style="margin-left:auto;font-size:10px;color:var(--muted2)">'+windStr+'</div>'
-    +'<div style="font-size:10px;color:var(--muted2)">Line '+sb.lineAxis.toFixed(1)+'°</div>'
+    +'<div style="font-size:10px;color:var(--muted2)">Line '+sb.lineAxis.toFixed(1)+'° · '+(rd.usedRCSN?'RC#'+rd.usedRCSN:'RC?')+' / '+(rd.usedPINSN?'PIN#'+rd.usedPINSN:'PIN?')+'</div>'
     +'</div>';
 })()}
 <div class="sh">START REPORT — boat-by-boat</div>
