@@ -2222,18 +2222,16 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   progressEl && (progressEl.textContent = `Processing Race ${raceNum}… (${rows.length} rows)`);
 
   // Separately fetch a wider window just for marks — marks broadcast sparsely
-  // and a mark may go offline before the gun, leaving us without its position.
-  // Use the day window if available, else fallback to ±30 min around gun.
-  const markWindowStart = event.dayStart || (gunTs - 1800000);
-  const markWindowEnd   = event.dayEnd   || (gunTs + 1800000);
+  // and a mark may go offline before the gun. Use ±30 min around gun
+  // (not full day, to avoid catching marks parked at storage location).
+  const markWindowStart = gunTs - 1800000;  // 30 min before gun
+  const markWindowEnd   = gunTs + 600000;   // 10 min after gun
   let markRows = [];
   try {
-    // Small limit since marks are sparse — typically <500 mark rows in a full day
-    const markUrl = `https://teleapi.regatta.app/telemetry/event/${event.id}?after=${markWindowStart}&before=${markWindowEnd}&limit=5000&division=C31`;
+    const markUrl = `https://teleapi.regatta.app/telemetry/event/${event.id}?after=${markWindowStart}&before=${markWindowEnd}&limit=20000&division=C31`;
     const markResp = await fetch(markUrl);
     const markData = await markResp.json();
     if(markData && markData.Rows){
-      // Filter to mark rows only
       markRows = markData.Rows.filter(r => r[7] === 'mark');
     }
   } catch(e) {
@@ -2397,9 +2395,9 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
           const m1=markPos[markKeys[i]], m2=markPos[markKeys[j]];
           const dist1=hav(cLat,cLon,m1.lat,m1.lon), dist2=hav(cLat,cLon,m2.lat,m2.lon);
           const avgDist=(dist1+dist2)/2;
-          if(avgDist>2000) continue; // ignore marks >2km from fleet
+          if(avgDist>500) continue; // ignore marks >500m from fleet (hard filter)
           const lineDist=hav(m1.lat,m1.lon,m2.lat,m2.lon);
-          if(lineDist<20||lineDist>600) continue; // ignore too short/long lines
+          if(lineDist<50||lineDist>500) continue; // start lines are 50-500m
           // Bearing of line
           const dLon=(m2.lon-m1.lon)*D2R;
           const y=Math.sin(dLon)*Math.cos(m2.lat*D2R);
