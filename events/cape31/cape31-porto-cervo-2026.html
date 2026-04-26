@@ -2221,6 +2221,25 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const rows = await fetchAllPages(event.id, gunTs - BEFORE_GUN, fetchEnd);
   progressEl && (progressEl.textContent = `Processing Race ${raceNum}… (${rows.length} rows)`);
 
+  // Separately fetch a wider window just for marks — marks broadcast sparsely
+  // and a mark may go offline before the gun, leaving us without its position.
+  // Use the day window if available, else fallback to ±30 min around gun.
+  const markWindowStart = event.dayStart || (gunTs - 1800000);
+  const markWindowEnd   = event.dayEnd   || (gunTs + 1800000);
+  let markRows = [];
+  try {
+    // Small limit since marks are sparse — typically <500 mark rows in a full day
+    const markUrl = `https://teleapi.regatta.app/telemetry/event/${event.id}?after=${markWindowStart}&before=${markWindowEnd}&limit=5000&division=C31`;
+    const markResp = await fetch(markUrl);
+    const markData = await markResp.json();
+    if(markData && markData.Rows){
+      // Filter to mark rows only
+      markRows = markData.Rows.filter(r => r[7] === 'mark');
+    }
+  } catch(e) {
+    console.warn('Mark fetch failed, falling back to main fetch window:', e);
+  }
+
   // ── OCS from telemetry: status=1 in [gun-2s .. gun+15s] ──
   // RaceSense sets status=1 on any boat the system flags as OCS at the start.
   const ocsFromTelemetry = new Set();
@@ -2251,16 +2270,26 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
         sog: row[13], hdg: row[12], roll: row[11]
       });
     } else if(type === 'mark'){
+      // Mark rows from main fetch — included for consistency.
+      // Most mark data comes from the wider markRows fetch below.
       const sn = row[1];
       const ts = row[0];
-      // Use mark positions from entire fetch window — some marks go offline
-      // before gun time so we need the widest possible window.
-      // Filter to stationary marks: low spread = anchored (not being towed)
       if(!markAcc[sn]) markAcc[sn] = {lats:[], lons:[], ts:[]};
       markAcc[sn].lats.push(row[8]);
       markAcc[sn].lons.push(row[9]);
       markAcc[sn].ts.push(ts);
     }
+  }
+
+  // Add mark data from the wider window — this catches marks that
+  // went offline before the gun or appeared only during course setup
+  for(const row of markRows){
+    const sn = row[1];
+    const ts = row[0];
+    if(!markAcc[sn]) markAcc[sn] = {lats:[], lons:[], ts:[]};
+    markAcc[sn].lats.push(row[8]);
+    markAcc[sn].lons.push(row[9]);
+    markAcc[sn].ts.push(ts);
   }
 
   // Median mark positions — use median to reject outliers from towing
