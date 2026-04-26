@@ -2290,13 +2290,25 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     markAcc[sn].ts.push(ts);
   }
 
-  // Median mark positions — use median to reject outliers from towing
-  // Ignore marks with spread > 50m (being towed = not a fixed start line mark)
+  // Mark positions — use median position within ±5 min of gun.
+  // Marks may be towed between races, so we need the position AT THIS race,
+  // not the spread over the entire fetch window.
   for(const [sn, acc] of Object.entries(markAcc)){
-    const lats = [...acc.lats].sort((a,b)=>a-b);
-    const lons = [...acc.lons].sort((a,b)=>a-b);
+    // Filter samples within ±5 min of gun
+    const nearGun = [];
+    for(let k=0;k<acc.ts.length;k++){
+      if(Math.abs(acc.ts[k] - gunTs) <= 300000){
+        nearGun.push({lat: acc.lats[k], lon: acc.lons[k]});
+      }
+    }
+    // If no samples near gun, fall back to all samples (mark may have gone offline)
+    const samples = nearGun.length >= 3 ? nearGun : acc.lats.map((lat,i)=>({lat, lon: acc.lons[i]}));
+    if(!samples.length) continue;
+    const lats = samples.map(s=>s.lat).sort((a,b)=>a-b);
+    const lons = samples.map(s=>s.lon).sort((a,b)=>a-b);
+    // Compute spread within this near-gun window only
     const spread = (lats[lats.length-1] - lats[0]) * 111320;
-    if(spread > 50) continue; // skip moving marks
+    if(spread > 80) continue; // skip if mark moved >80m even in 10min window
     markPos[sn] = {
       lat: lats[Math.floor(lats.length/2)],
       lon: lons[Math.floor(lons.length/2)],
