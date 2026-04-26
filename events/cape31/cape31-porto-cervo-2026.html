@@ -2290,28 +2290,22 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     markAcc[sn].ts.push(ts);
   }
 
-  // Mark positions — use median position within ±5 min of gun.
-  // Marks may be towed between races, so we need the position AT THIS race,
-  // not the spread over the entire fetch window.
+  // Mark positions — use the position closest to gun time for each mark.
+  // Marks may be towed between/before races, so taking median over a window
+  // would give a wrong location. Instead pick the single sample closest to gun.
   for(const [sn, acc] of Object.entries(markAcc)){
-    // Filter samples within ±5 min of gun
-    const nearGun = [];
-    for(let k=0;k<acc.ts.length;k++){
-      if(Math.abs(acc.ts[k] - gunTs) <= 300000){
-        nearGun.push({lat: acc.lats[k], lon: acc.lons[k]});
-      }
+    if(!acc.ts.length) continue;
+    let bestIdx = 0, bestDt = Math.abs(acc.ts[0] - gunTs);
+    for(let k=1;k<acc.ts.length;k++){
+      const dt = Math.abs(acc.ts[k] - gunTs);
+      if(dt < bestDt){ bestDt = dt; bestIdx = k; }
     }
-    // If no samples near gun, fall back to all samples (mark may have gone offline)
-    const samples = nearGun.length >= 3 ? nearGun : acc.lats.map((lat,i)=>({lat, lon: acc.lons[i]}));
-    if(!samples.length) continue;
-    const lats = samples.map(s=>s.lat).sort((a,b)=>a-b);
-    const lons = samples.map(s=>s.lon).sort((a,b)=>a-b);
-    // Compute spread within this near-gun window only
-    const spread = (lats[lats.length-1] - lats[0]) * 111320;
-    if(spread > 80) continue; // skip if mark moved >80m even in 10min window
+    // Reject if even the closest sample is more than 10 minutes from gun
+    // (mark wasn't transmitting at race time)
+    if(bestDt > 600000) continue;
     markPos[sn] = {
-      lat: lats[Math.floor(lats.length/2)],
-      lon: lons[Math.floor(lons.length/2)],
+      lat: acc.lats[bestIdx],
+      lon: acc.lons[bestIdx],
     };
   }
 
