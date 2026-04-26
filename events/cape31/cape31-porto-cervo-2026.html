@@ -541,6 +541,7 @@ const EVENTS = [
     isPractice: true,  // exclude from event averages
     dayStart: 1776932400000,
     dayEnd:   1776954000000,
+    markSNs: { RC_SNS: [28093], PIN_SN: 28320, WW: [27953], LW: [] },
     knownGuns: [
       [3, 1776949200000],
       [4, 1776949800000],
@@ -555,6 +556,7 @@ const EVENTS = [
     raceDay: 3,
     dayStart: 1777017600000,   // 2026-04-24 08:00 UTC
     dayEnd:   1777046400000,   // 2026-04-24 16:00 UTC
+    markSNs: { RC_SNS: [27844, 28142], PIN_SN: 28320, WW: [27953], LW: [] },
     knownGuns: [
       [6, 1777024800000],   // 12:00 CEST
       [7, 1777028400000],   // 13:00 CEST
@@ -569,6 +571,7 @@ const EVENTS = [
     raceDay: 4,
     dayStart: 1777104000000,   // 2026-04-25 08:00 UTC
     dayEnd:   1777132800000,   // 2026-04-25 16:00 UTC
+    markSNs: { RC_SNS: [27844, 28142], PIN_SN: 28320, WW: [27953], LW: [] },
     knownGuns: [
       [10, 1777114800000],  // 13:00 CEST
       [11, 1777119480000],  // 14:18 CEST
@@ -577,6 +580,19 @@ const EVENTS = [
     ]
   },
 ];
+
+// Helper: get marks SNs for a specific event, falling back to global GATE_SNS
+function getGateSNs(event){
+  if(event && event.markSNs){
+    return {
+      RC_SNS: event.markSNs.RC_SNS || GATE_SNS.RC_SNS,
+      PIN_SN: event.markSNs.PIN_SN ?? GATE_SNS.PIN_SN,
+      WW: event.markSNs.WW || GATE_SNS.WW,
+      LW: event.markSNs.LW || GATE_SNS.LW,
+    };
+  }
+  return GATE_SNS;
+}
 
 // ── Fleet config ──────────────────────────────────────────────────
 // EXCLUDED_BOATS: sail numbers to ignore (RC boat, bow boat, chase boat)
@@ -2262,9 +2278,10 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
 
   BOATS = [...BOATS].filter(s => !EXCLUDED_BOATS.includes(s));
 
-  // Resolve gate positions
-  const wwSns = GATE_SNS.WW.filter(s => markPos[s]);
-  const lwSns = GATE_SNS.LW.filter(s => markPos[s]);
+  // Resolve gate positions using per-event mark SNs
+  const eventGates = getGateSNs(event);
+  const wwSns = eventGates.WW.filter(s => markPos[s]);
+  const lwSns = eventGates.LW.filter(s => markPos[s]);
   
   let WWGATE, LWGATE, WW_A, WW_B, LW_A, LW_B;
   if(wwSns.length >= 1){
@@ -2276,13 +2293,12 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     LWGATE = {lat:(LW_A.lat+LW_B.lat)/2, lon:(LW_A.lon+LW_B.lon)/2};
   }
   
-  // RC and PIN identification
-  // Primary: use configured SNs from GATE_SNS
+  // RC and PIN identification using per-event mark SNs
   let RC, PIN;
-  for(const sn of GATE_SNS.RC_SNS){
+  for(const sn of eventGates.RC_SNS){
     if(markPos[sn]){ RC = markPos[sn]; break; }
   }
-  if(markPos[GATE_SNS.PIN_SN]) PIN = markPos[GATE_SNS.PIN_SN];
+  if(markPos[eventGates.PIN_SN]) PIN = markPos[eventGates.PIN_SN];
 
   // Fallback: if either mark missing, find the best pair automatically.
   // Best pair = two stationary marks closest to fleet centroid at gun,
