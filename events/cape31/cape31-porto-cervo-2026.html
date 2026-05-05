@@ -3066,22 +3066,22 @@ function renderRacePanel(panelEl, rd){
         <div class="table-scroll"><table class="start-table" id="${startTableId}"><thead><tr>
       <th data-col="rank" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','rank','asc',true)">#</th>
       <th>Boat</th>
-      <th data-col="dtl" data-dir="desc" style="cursor:pointer" title="Click to sort. DTL is signed: positive = pre-start side (safe), negative = course side (OCS side)" onclick="sortTable('${startTableId}','dtl','desc',true)">DTL@Gun ⇅<br><span style="font-weight:400;font-size:7px">+ safe  − course</span></th>
+      <th data-col="dtl15" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','dtl15','asc',true)">DTL@T-15 ⇅<br><span style="font-weight:400;font-size:7px">dist to line 15s before gun</span></th>
+      <th data-col="dtl" data-dir="desc" style="cursor:pointer" title="Signed: + safe, − OCS" onclick="sortTable('${startTableId}','dtl','desc',true)">DTL@Gun ⇅<br><span style="font-weight:400;font-size:7px">+ safe  − OCS</span></th>
       <th data-col="spd" data-dir="desc" style="cursor:pointer" onclick="sortTable('${startTableId}','spd','desc',true)">Speed@Gun ⇅</th>
-      <th data-col="cross" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','cross','asc',true)">Line cross ⇅<br><span style="font-weight:400;font-size:7px">sec after gun</span></th>
-      <th data-col="linepct" data-dir="desc" style="cursor:pointer" title="0% = pin, 100% = boat" onclick="sortTable('${startTableId}','linepct','desc',true)">Line % ⇅<br><span style="font-weight:400;font-size:7px">0 pin · 100 boat</span></th>
-      <th data-col="t95" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','t95','asc',true)">T→95% ⇅<br><span style="font-weight:400;font-size:7px">secs to reach speed</span></th>
+      <th data-col="linepct" data-dir="desc" style="cursor:pointer" onclick="sortTable('${startTableId}','linepct','desc',true)">Line End ⇅<br><span style="font-weight:400;font-size:7px">RC / MID / PIN</span></th>
+      <th data-col="pos50" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','pos50','asc',true)">Top Mark ⇅<br><span style="font-weight:400;font-size:7px">rank at WW mark</span></th>
     </tr></thead><tbody id="${startBodyId}"></tbody></table></div>
 
     <!-- PAGE 2 — Leg 1 table first -->
-    <div class="sh page2-start">LEG 1 — UPWIND ORDER at T+50s · ranked by dist to WW mark</div>
+    <div class="sh page2-start">LEG 1 — TOP MARK ORDER · upwind VMG &amp; speed to WW mark</div>
     <div class="table-scroll"><table class="reach-table" id="${l1TableId}"><thead><tr>
       <th data-col="rank" style="cursor:pointer" onclick="sortTable('${l1TableId}','rank','asc',false)">#</th>
       <th>Boat</th>
-      <th data-col="sailed" style="cursor:pointer" onclick="sortTable('${l1TableId}','sailed','desc',false)">Dist sailed ⇅</th>
-      <th data-col="sog" style="cursor:pointer" onclick="sortTable('${l1TableId}','sog','desc',false)">Avg SOG ⇅</th>
-      <th data-col="vmg" style="cursor:pointer" onclick="sortTable('${l1TableId}','vmg','desc',false)">Avg VMG ⇅</th>
-      <th data-col="gap" style="cursor:pointer" onclick="sortTable('${l1TableId}','gap','asc',false)">Gap ⇅<br><span style="font-weight:400;font-size:8px">dist behind leader</span></th>
+      <th data-col="dist" style="cursor:pointer" onclick="sortTable('${l1TableId}','dist','asc',false)">Dist to WW ⇅<br><span style="font-weight:400;font-size:7px">metres at T+50s</span></th>
+      <th data-col="vmg" style="cursor:pointer" onclick="sortTable('${l1TableId}','vmg','desc',false)">Upwind VMG ⇅<br><span style="font-weight:400;font-size:7px">kts toward WW</span></th>
+      <th data-col="sog" style="cursor:pointer" onclick="sortTable('${l1TableId}','sog','desc',false)">Avg Speed ⇅<br><span style="font-weight:400;font-size:7px">kts gun→T+50s</span></th>
+      <th>Gap<br><span style="font-weight:400;font-size:7px">metres behind leader</span></th>
     </tr></thead><tbody id="${l1BodyId}"></tbody></table></div>
       </div>
     </div>
@@ -4114,13 +4114,15 @@ function renderL1R(rd){
     tr.dataset.sog    = String(s.sog ?? 0);
     tr.dataset.vmg    = String(s.vmg ?? 0);
     tr.dataset.gap    = String(gapVal);
+    const wwDistM = s.distToWW != null ? Math.round(s.distToWW) : null;
+    const wwDistBar = s.distToWW != null && leadDist > 0 ? (100 - Math.min(100, (s.distToWW - leadDist) / leadDist * 100)).toFixed(1) : '0';
     tr.innerHTML=`
       <td><div class="td"><span class="rk ${rk}">#${i+1}</span></div></td>
       <td><div class="td"><span class="sn" style="font-size:13px;color:${c}">${s.sail}</span><br><span style="font-size:9px;color:var(--muted);letter-spacing:.5px">${TEAM_NAMES[s.sail]||''}</span></div></td>
-      <td><div class="td"><div class="br"><div class="bb"><div class="bf" style="width:${dp}%;background:${c}"></div></div><div class="bv" style="color:${c}">${Math.round(s.dist)}m</div></div></div></td>
-      <td><div class="td"><div class="br"><div class="bb"><div class="bf" style="width:${sp}%;background:${c}"></div></div><div class="bv" style="color:${c}">${s.sog.toFixed(2)} kts</div></div></div></td>
-      <td><div class="td">${s.vmg!=null?`<div class="br"><div class="bb"><div class="bf" style="width:${(s.vmg/mVmg*100).toFixed(1)}%;background:${c}"></div></div><div class="bv" style="color:${c}">${s.vmg.toFixed(2)} kts</div></div>`:"<span style='color:var(--muted2)'>—</span>"}</div></td>
-      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:11px;color:${i===0?'var(--green)':'var(--muted)'}">${i===0?'LEAD':'+'+Math.round(s.distToWW??0)+'m'}</span></div></td>
+      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:12px;color:${c}">${wwDistM!=null?wwDistM+'m':'—'}</span></div></td>
+      <td><div class="td">${s.vmg!=null?`<div class="br"><div class="bb"><div class="bf" style="width:${(s.vmg/mVmg*100).toFixed(1)}%;background:${c}"></div></div><div class="bv" style="color:${c}">${s.vmg.toFixed(2)}kts</div></div>`:'<span style="color:var(--muted2)">—</span>'}</div></td>
+      <td><div class="td"><div class="br"><div class="bb"><div class="bf" style="width:${sp}%;background:${c}"></div></div><div class="bv" style="color:${c}">${s.sog.toFixed(2)}kts</div></div></div></td>
+      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:${i===0?'var(--green)':'var(--muted2)'}">${i===0?'LEAD':gap}</span></div></td>
     `;
     tb.appendChild(tr);
   });
@@ -4287,7 +4289,7 @@ function renderEventSummary(panelEl, allRaces){
       {key:'avgDelta', label:'AVG Δ'},
       {key:'avgDist', label:'AVG DTL'},
       {key:'avgSog', label:'AVG SPD@GUN'},
-      {key:'avgT95', label:'AVG T→95%'},
+      {key:'avgT95', label:'AVG TOP MARK'},
       {key:'avgStartPct', label:'START %'},
       {key:'ocsCount', label:'OCS'},
     ];
@@ -4359,7 +4361,7 @@ function renderEventSummary(panelEl, allRaces){
         </div>
         <div class="ds-hl">
           <div class="ds-hl-val">${fleetAvgT95!=null?fleetAvgT95.toFixed(1)+'s':'—'}</div>
-          <div class="ds-hl-lbl">REGATTA AVG T→95%</div>
+          <div class="ds-hl-lbl">REGATTA AVG TOP MARK</div>
         </div>
         <div class="ds-hl" style="border-color:${totalOCS>0?'rgba(255,68,102,.4)':'var(--muted2)'}">
           <div class="ds-hl-val" style="color:${totalOCS>0?'var(--red)':'var(--cyan)'}">${totalOCS}</div>
@@ -4531,7 +4533,7 @@ function renderDaySummary(panelEl, event, races){
     const colDefs = [
       {key:'boat',       label:'BOAT',                  sortKey:null},
       {key:'avgFin',     label:'AVG FINISH',            sortKey:'avgFin'},
-      {key:'avgPos50',   label:'AVG POS@T+50s',         sortKey:'avgPos50'},
+      {key:'avgPos50',   label:'AVG TOP MARK',          sortKey:'avgPos50'},
       {key:'avgDistM15', label:'AVG DTL@T-15 (m)',       sortKey:'avgDistM15'},
       {key:'avgDist',    label:'AVG DTL@GUN (m)',        sortKey:'avgDist'},
       {key:'dtlSd',      label:'START SD (m)',           sortKey:'dtlSd'},
@@ -4659,7 +4661,7 @@ function renderDaySummary(panelEl, event, races){
       </div>
       <div class="ds-hl">
         <div class="ds-hl-val">${fleetAvgT95!=null?fleetAvgT95.toFixed(1)+'s':'—'}</div>
-        <div class="ds-hl-lbl">FLEET AVG T→95%</div>
+        <div class="ds-hl-lbl">FLEET AVG TOP MARK</div>
       </div>
       <div class="ds-hl" style="border-color:${totalOCS>0?'rgba(255,68,102,.4)':'var(--muted2)'}">
         <div class="ds-hl-val" style="color:${totalOCS>0?'var(--red)':'var(--cyan)'}">${totalOCS}</div>
