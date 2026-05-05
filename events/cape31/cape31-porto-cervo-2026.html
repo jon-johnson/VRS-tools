@@ -3992,53 +3992,73 @@ function renderStartR(rd){
   const tb = document.getElementById(raceDomId(rd,'startBody'));
   if(!tb || !startStats || !startStats.length) return;
   tb.innerHTML = '';
-  // Sort by mark 1 order (reach mark arrival order), fall back to distGun
-  const ranked = [];
-  if(l1Order && l1Order.length){
-    for(const sail of l1Order){
-      const s = startStats.find(x=>x.sail===sail);
-      if(s) ranked.push(s);
-    }
-    for(const s of startStats){
-      if(!ranked.find(x=>x.sail===s.sail)) ranked.push(s);
-    }
-  } else {
-    ranked.push(...startStats);
-  }
-  // Always push Vakaros-called OCS boats to the bottom
+
   const ocsSet = rd.ocsFromTelemetry || new Set();
-  ranked.sort((a,b)=>{
+
+  // Build Pos@T+50s from l1Order (rank in fleet 50s after gun)
+  // l1Order is sorted by distance sailed upwind at T+50s
+  const posT50 = {};
+  if(l1Order && l1Order.length){
+    l1Order.forEach((sail, i) => { posT50[sail] = i + 1; });
+  }
+
+  // Sort by T+50s rank; OCS boats to bottom
+  const ranked = [...startStats].sort((a, b) => {
     const aOCS = ocsSet.has(a.sail), bOCS = ocsSet.has(b.sail);
     if(aOCS && !bOCS) return 1;
     if(!aOCS && bOCS) return -1;
-    return 0; // preserve existing order within each group
+    const pa = posT50[a.sail] ?? 999, pb = posT50[b.sail] ?? 999;
+    return pa - pb;
   });
+
   const maxSpd = Math.max(...ranked.map(s=>s.sogGun||0), 1);
+  const nBoats = ranked.length;
+
   ranked.forEach((s, i) => {
-    const isOCS = rd.ocsFromTelemetry ? rd.ocsFromTelemetry.has(s.sail) : false;
+    const isOCS = ocsSet.has(s.sail);
     const c = isOCS ? '#ff3355' : (COL[s.sail] || '#888');
     const rk = i===0?'g':i===1?'s':i===2?'b':'';
     const spdBar = ((s.sogGun||0)/maxSpd*100).toFixed(1);
-    const linePctBar = Math.max(0, Math.min(100, s.linePct ?? 0)).toFixed(1);
+
+    // DTL@Gun — signed distance to line
     const dtlVal = s.distGun;
-    const signedCol = dtlVal == null ? 'var(--muted)'
-                    : dtlVal >= DTL_CLEAR_M ? 'var(--green)'
-                    : dtlVal >= 0           ? 'var(--yellow)'
-                    :                         'var(--red)';
+    const dtlCol = dtlVal == null ? 'var(--muted)'
+                 : dtlVal >= DTL_CLEAR_M ? 'var(--green)'
+                 : dtlVal >= 0           ? 'var(--yellow)'
+                 :                         'var(--red)';
+
+    // DTL@T-15 — distance to line 15s before gun
+    const dtl15 = s.distM15;
+    const dtl15Col = dtl15 == null ? 'var(--muted)'
+                   : dtl15 > 30   ? 'var(--muted2)'   // too far back
+                   : dtl15 > 10   ? 'var(--yellow)'
+                   :                'var(--green)';
+
+    // Line end zone: linePct 0-33=PIN, 34-66=MID, 67-100=RC
+    const lp = s.linePct;
+    const endZone = lp == null ? '—'
+                  : lp <= 33   ? '<span style="color:var(--teal);font-family:Orbitron,monospace;font-size:10px;font-weight:700">PIN</span>'
+                  : lp >= 67   ? '<span style="color:var(--orange);font-family:Orbitron,monospace;font-size:10px;font-weight:700">RC</span>'
+                  :              '<span style="color:var(--muted2);font-family:Orbitron,monospace;font-size:10px">MID</span>';
+
+    // Pos@T+50s
+    const p50 = posT50[s.sail];
+    const p50pct = p50 ? ((nBoats - p50) / (nBoats - 1) * 100) : 0;
+    const p50col = p50 == null ? 'var(--muted)'
+                 : p50 <= 3   ? 'var(--green)'
+                 : p50 <= Math.ceil(nBoats/2) ? 'var(--yellow)'
+                 :               'var(--red)';
+
     const tr = document.createElement('tr');
-    tr.dataset.rank = String(i);
-    tr.dataset.dtl  = String(s.distGun ?? 9999);
+    tr.dataset.rank   = String(i);
+    tr.dataset.dtl    = String(s.distGun ?? 9999);
+    tr.dataset.dtl15  = String(s.distM15 ?? 9999);
+    tr.dataset.spd    = String(s.sogGun ?? 0);
     tr.dataset.linepct = String(s.linePct ?? -1);
-    tr.dataset.spd  = String(s.sogGun ?? 0);
-    tr.dataset.cross = String(s.crossingTime ?? 9999);
-    tr.dataset.t95  = String(s.accel ?? 9999);
-    tr.dataset.ocs  = isOCS ? '1' : '0';
+    tr.dataset.pos50  = String(p50 ?? 999);
+    tr.dataset.ocs    = isOCS ? '1' : '0';
     if(isOCS) tr.style.cssText = 'background:rgba(255,51,85,.12);border-left:3px solid #ff3355';
-    // T→95%: accel now holds seconds; lower = better (quicker to reach speed)
-    const t95Col = s.accel == null ? 'var(--muted)'
-                 : s.accel <= 15   ? 'var(--green)'
-                 : s.accel <= 30   ? 'var(--yellow)'
-                 :                   'var(--red)';
+
     tr.innerHTML = `
       <td><div class="td"><span class="rk ${rk}">#${i+1}</span></div></td>
       <td><div class="td" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
@@ -4046,17 +4066,17 @@ function renderStartR(rd){
         <span style="font-size:9px;color:var(--muted)">${TEAM_NAMES[s.sail]||''}</span>
         ${isOCS ? '<span style="font-size:8px;font-weight:700;color:#ff3355;font-family:Orbitron,monospace;background:rgba(255,51,85,.2);padding:1px 4px;border-radius:2px;border:1px solid #ff335555">OCS</span>' : ''}
       </div></td>
-      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:${signedCol}">${s.distGun!=null?(s.distGun>=0?'+':'')+s.distGun.toFixed(1)+'m':'—'}</span></div></td>
+      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:11px;color:${dtl15Col}">${dtl15!=null?'+'+dtl15.toFixed(1)+'m':'—'}</span></div></td>
+      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:${dtlCol}">${dtlVal!=null?(dtlVal>=0?'+':'')+dtlVal.toFixed(1)+'m':'—'}</span></div></td>
       <td><div class="td"><div class="br">
         <div class="bb"><div class="bf" style="width:${spdBar}%;background:${c}"></div></div>
         <div class="bv" style="color:${c}">${s.sogGun!=null?s.sogGun.toFixed(1)+'kts':'—'}</div>
       </div></div></td>
-      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:11px;color:${c}">${s.crossingTime!=null?'+'+s.crossingTime.toFixed(1)+'s':'—'}</span></div></td>
-      <td><div class="td"><div class="br">
-        <div class="bb"><div class="bf" style="width:${linePctBar}%;background:${c}"></div></div>
-        <div class="bv" style="color:${c}">${s.linePct!=null?s.linePct.toFixed(0)+'%':'—'}</div>
-      </div></div></td>
-      <td><div class="td"><span style="font-family:Orbitron,monospace;font-size:11px;color:${t95Col}">${s.accel!=null?s.accel.toFixed(1)+'s':'—'}</span></div></td>
+      <td><div class="td">${endZone}</div></td>
+      <td><div class="td">${p50!=null?
+        `<div class="br"><div class="bb"><div class="bf" style="width:${p50pct.toFixed(1)}%;background:${c}"></div></div><div class="bv" style="color:${p50col}">P${p50}</div></div>`
+        :'<span style="color:var(--muted)">—</span>'
+      }</div></td>
     `;
     tb.appendChild(tr);
   });
@@ -4223,16 +4243,16 @@ function renderEventSummary(panelEl, allRaces){
   const ocsCell=v=>v?`<span style="color:#ff3355;font-family:Orbitron,monospace;font-size:11px">${v}</span>`:'<span class="ds-ocs-none">0</span>';
   const deltaCell=v=>{if(v==null)return'—';const c=v>0?'var(--green)':v<0?'var(--red)':'var(--muted)';return`<span style="font-family:Orbitron,monospace;font-size:11px;color:${c}">${v>0?'+':''}${v.toFixed(1)}</span>`;};
 
-  const reachRankMap = {};
+  const pos50RankMap = {};
   [...allBoats]
     .sort((a,b)=>{
-      const va = aggr[a].avgReach, vb = aggr[b].avgReach;
+      const va = aggr[a].avgPos50, vb = aggr[b].avgPos50;
       if(va==null && vb==null) return 0;
       if(va==null) return 1;
       if(vb==null) return -1;
       return va-vb;
     })
-    .forEach((b,i)=>{ reachRankMap[b]=i+1; });
+    .forEach((b,i)=>{ pos50RankMap[b]=i+1; });
 
   const rankBadge = rank => {
     if(!rank) return '';
@@ -4392,88 +4412,72 @@ function renderDaySummary(panelEl, event, races){
   // ══════════════════════════════════════════════════════
   // boatData[sail] = { reachPos[], finPos[], delta[], distGun[], sogGun[], ocsOfficial[], ocsVakaros[] }
   const boatData = {};
-  allBoats.forEach(b=>{ boatData[b]={ reachPos:[], finPos:[], delta:[], distGun:[], sogGun:[], t95:[], startPct:[], ocsVakaros:[] }; });
-  const regionStats = { LOW:[], MID:[], HIGH:[] };
+  allBoats.forEach(b=>{ boatData[b]={ finPos:[], pos50:[], distGun:[], distM15:[], sogGun:[], ocsVakaros:[] }; });
 
   for(const rd of loaded){
     const officialRace = ((OFFICIAL_RESULTS_BY_DAY[rd.event._dayIdx||0]||OFFICIAL_RESULTS_BY_DAY[0])||{})[rd.raceNum] || {};
-    // Build finish order from OFFICIAL_RESULTS (numeric pos, ascending)
-    const finOrder = Object.entries(officialRace)
-      .filter(([,v])=>typeof v==='number')
-      .sort((a,b)=>a[1]-b[1])
-      .map(([sail])=>sail);
 
     for(const b of allBoats){
-      // 1. Reach position (l1Order rank 1-based)
-      const rp = rd.l1Order.indexOf(b);
-      const reachPos = rp>=0 ? rp+1 : null;
-      boatData[b].reachPos.push(reachPos);
+      // 1. Pos@T+50s (l1Order rank 1-based — distance sailed upwind at T+50s)
+      const l1rank = rd.l1Order.indexOf(b);
+      boatData[b].pos50.push(l1rank >= 0 ? l1rank + 1 : null);
 
-      // 2. Finish position from official results
+      // 2. Official finish position
       const fp = officialRace[b];
-      const finPos = (typeof fp==='number') ? fp : null;
-      boatData[b].finPos.push(finPos);
+      boatData[b].finPos.push(typeof fp==='number' ? fp : null);
 
-      // 3. Places delta: reach → finish (positive = gained places after reach mark)
-      const delta = (reachPos!=null && finPos!=null) ? reachPos - finPos : null;
-      boatData[b].delta.push(delta);
-
-      // 4. Distance from start line at gun — absolute signed DTL (distance to line itself)
+      // 3. DTL@Gun — signed, take absolute value for distance metric
       const ss = rd.startStats?.find(s=>s.sail===b);
-      const gd = rd.GUND?.find(d=>d.sail===b);
-      // distGun is signed DTL: + = pre-start side, - = OCS side. Abs = dist to line.
-      const distFromLine = ss?.distGun != null ? Math.abs(ss.distGun) : null;
-      boatData[b].distGun.push(distFromLine);
+      boatData[b].distGun.push(ss?.distGun != null ? ss.distGun : null);
 
-      // 5. Speed at gun (from GUND which already has interpolated SOG in kts)
+      // 4. DTL@T-15 — distance 15s before gun
+      boatData[b].distM15.push(ss?.distM15 != null ? ss.distM15 : null);
+
+      // 5. Speed at gun
+      const gd = rd.GUND?.find(d=>d.sail===b);
       boatData[b].sogGun.push(gd ? gd.sog : null);
 
-      // 5b. T→95% time from the start report
-      boatData[b].t95.push(ss?.accel != null ? ss.accel : null);
-
-      // 5c. Start line position (0%=pin, 100%=boat)
-      const sp = normStartPct(ss?.startLinePct ?? ss?.linePct);
-      boatData[b].startPct.push(sp);
-      const rg = startRegion(sp);
-      if(rg && reachPos!=null) regionStats[rg].push(reachPos);
-
-      // 6. Official OCS — Vakaros telemetry status=1 flag (authoritative)
-      // ocsFromTelemetry is a Set of sail numbers called OCS by Vakaros this race
-      const ocsVak = rd.ocsFromTelemetry ? rd.ocsFromTelemetry.has(b) : null;
-      boatData[b].ocsVakaros.push(ocsVak === true ? true : false);
+      // 6. OCS (Vakaros telemetry)
+      const ocsVak = rd.ocsFromTelemetry ? rd.ocsFromTelemetry.has(b) : false;
+      boatData[b].ocsVakaros.push(ocsVak);
     }
   }
 
   // ── Day-level aggregates per boat ──
+  const stdDev = arr => {
+    const v = arr.filter(x=>x!=null);
+    if(v.length < 2) return null;
+    const m = v.reduce((a,b)=>a+b,0)/v.length;
+    return Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1));
+  };
   const aggr = {};
   allBoats.forEach(b=>{
     const d = boatData[b];
+    const dtlSigned = d.distGun.filter(x=>x!=null);
     aggr[b] = {
-      avgReach  : avg(d.reachPos),
       avgFin    : avg(d.finPos),
-      avgDelta  : avg(d.delta),
-      avgDist   : avg(d.distGun),
+      avgPos50  : avg(d.pos50),
+      avgDist   : avg(dtlSigned.map(v=>Math.abs(v))),  // absolute DTL@Gun
+      dtlSd     : stdDev(dtlSigned),                    // consistency (lower SD = more consistent)
+      avgDistM15: avg(d.distM15),
       avgSog    : avg(d.sogGun),
-      avgT95    : avg(d.t95),
-      avgStartPct: avg(d.startPct),
       ocsCount  : sum(d.ocsVakaros.map(v=>v?1:0)),
-      nRaces    : d.reachPos.filter(x=>x!=null).length,
-      // per-race arrays for slope chart
-      reachPerRace : d.reachPos,
-      finPerRace   : d.finPos,
+      nRaces    : d.finPos.filter(x=>x!=null).length || d.pos50.filter(x=>x!=null).length,
+      finPerRace : d.finPos,
+      pos50PerRace: d.pos50,
     };
   });
 
-  const reachRankMap = {};
+  const pos50RankMap = {};
   [...allBoats]
     .sort((a,b)=>{
-      const va = aggr[a].avgReach, vb = aggr[b].avgReach;
+      const va = aggr[a].avgPos50, vb = aggr[b].avgPos50;
       if(va==null && vb==null) return 0;
       if(va==null) return 1;
       if(vb==null) return -1;
       return va-vb;
     })
-    .forEach((b,i)=>{ reachRankMap[b]=i+1; });
+    .forEach((b,i)=>{ pos50RankMap[b]=i+1; });
 
   const rankBadge = rank => {
     if(!rank) return '';
@@ -4484,7 +4488,6 @@ function renderDaySummary(panelEl, event, races){
   // ── Fleet highlights ──
   const fleetAvgSog  = avg(allBoats.map(b=>aggr[b].avgSog));
   const fleetAvgDist = avg(allBoats.map(b=>aggr[b].avgDist));
-  const fleetAvgT95  = avg(allBoats.map(b=>aggr[b].avgT95));
   const totalOCS     = sum(allBoats.map(b=>aggr[b].ocsCount));
 
   // ══════════════════════════════════════════════════════
@@ -4522,16 +4525,15 @@ function renderDaySummary(panelEl, event, races){
   function renderTable(){
     const boats = sortedBoats();
     const colDefs = [
-      {key:'boat',   label:'BOAT',              sortKey:null},
-      {key:'avgFin', label:'AVG FINISH',        sortKey:'avgFin'},
-      {key:'avgReach',label:'AVG REACH',        sortKey:'avgReach'},
-      {key:'avgDelta',label:'REACH→FIN Δ',      sortKey:'avgDelta'},
-      {key:'avgDist', label:'AVG DIST TO LINE (m)', sortKey:'avgDist'},
-      {key:'avgSog',  label:'AVG SPD@GUN (kts)',sortKey:'avgSog'},
-      {key:'avgT95', label:'AVG T→95% (s)', sortKey:'avgT95'},
-      {key:'avgStartPct', label:'START %', sortKey:'avgStartPct'},
-      {key:'ocsCount',label:'OCS (VAKAROS)',    sortKey:'ocsCount'},
-      {key:'nRaces',  label:'RACES',            sortKey:'nRaces'},
+      {key:'boat',       label:'BOAT',                  sortKey:null},
+      {key:'avgFin',     label:'AVG FINISH',            sortKey:'avgFin'},
+      {key:'avgPos50',   label:'AVG POS@T+50s',         sortKey:'avgPos50'},
+      {key:'avgDistM15', label:'AVG DTL@T-15 (m)',       sortKey:'avgDistM15'},
+      {key:'avgDist',    label:'AVG DTL@GUN (m)',        sortKey:'avgDist'},
+      {key:'dtlSd',      label:'START SD (m)',           sortKey:'dtlSd'},
+      {key:'avgSog',     label:'AVG SPD@GUN (kts)',     sortKey:'avgSog'},
+      {key:'ocsCount',   label:'OCS',                   sortKey:'ocsCount'},
+      {key:'nRaces',     label:'RACES',                 sortKey:'nRaces'},
     ];
 
     const hdrs = colDefs.map(c=>{
@@ -4552,12 +4554,11 @@ function renderDaySummary(panelEl, event, races){
           </div>
         </div></td>
         <td style="text-align:center">${finCell(ag.avgFin)}</td>
-        <td style="text-align:center"><span class="ds-rank-wrap"><span class="ds-fin-n" style="font-family:Orbitron,monospace;font-size:11px;color:${col}">${fmtN(ag.avgReach,1)}</span>${rankBadge(reachRank)}</span></td>
-        <td style="text-align:center">${deltaCell(ag.avgDelta)}</td>
+        <td style="text-align:center"><span class="ds-rank-wrap"><span class="ds-fin-n" style="font-family:Orbitron,monospace;font-size:11px;color:${col}">${ag.avgPos50!=null?ag.avgPos50.toFixed(1):'—'}</span>${rankBadge(pos50RankMap[b])}</span></td>
+        <td style="text-align:center"><span class="ds-mono" style="color:var(--muted2)">${ag.avgDistM15!=null?Math.round(ag.avgDistM15)+'m':'—'}</span></td>
         <td style="text-align:center"><span class="ds-mono">${ag.avgDist!=null?Math.round(ag.avgDist)+'m':'—'}</span></td>
+        <td style="text-align:center"><span class="ds-mono" style="color:${ag.dtlSd==null?'var(--muted)':ag.dtlSd<=5?'var(--green)':ag.dtlSd<=15?'var(--yellow)':'var(--red)'}">${ag.dtlSd!=null?'±'+ag.dtlSd.toFixed(1)+'m':'—'}</span></td>
         <td style="text-align:center"><span class="ds-mono">${fmtN(ag.avgSog,2)}</span></td>
-        <td style="text-align:center"><span class="ds-mono">${ag.avgT95!=null?ag.avgT95.toFixed(1)+'s':'—'}</span></td>
-        <td style="text-align:center"><span class="ds-mono">${ag.avgStartPct!=null?Math.round(ag.avgStartPct)+'%':'—'}</span></td>
         <td style="text-align:center">${ocsCell(ag.ocsCount)}</td>
         <td style="text-align:center"><span class="ds-mono">${ag.nRaces}/${N}</span></td>
       </tr>`;
