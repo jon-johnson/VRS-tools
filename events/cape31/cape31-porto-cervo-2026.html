@@ -2802,6 +2802,10 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       const distGun = distToLinePt(pGun, RC, PIN);
       const sogGun  = pGun.sog * 0.539957;
 
+      // Distance to line at T-15s (approach metric: how far were they with 15s to go)
+      const pM15 = ptAtTime(t, gunTs - 15000);
+      const distM15 = pM15 ? distToLinePt(pM15, RC, PIN) : null;
+
       // Start position as percentage up the line
       // 0% = pin, 100% = committee boat
       let linePct = null;
@@ -2881,7 +2885,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       else startStatus = null;
 
       startData.push({
-        sail, distGun, sogGun, linePct,
+        sail, distGun, distM15, sogGun, linePct,
         closestApproach,  // signed: negative = was over line, positive = stayed behind
         crossingTime, accel, avgSogApproach,
         startStatus,
