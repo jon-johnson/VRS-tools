@@ -4238,7 +4238,7 @@ function renderEventSummary(panelEl, allRaces){
     aggr[b]={
       avgReach: avg(d.reachPos), avgFin: avg(d.finPos),
       avgDelta: avg(d.delta), avgDist: avg(d.distGun),
-      avgSog: avg(d.sogGun), avgT95: avg(d.t95),
+      avgSog: avg(d.sogGun),
       avgStartPct: avg(d.startPct),
       ocsCount: sum(d.ocsVakaros.map(v=>v?1:0)),
       nRaces, totalPts: sum(d.finPos.filter(v=>v!=null))
@@ -4289,7 +4289,7 @@ function renderEventSummary(panelEl, allRaces){
       {key:'avgDelta', label:'AVG Δ'},
       {key:'avgDist', label:'AVG DTL'},
       {key:'avgSog', label:'AVG SPD@GUN'},
-      {key:'avgT95', label:'AVG TOP MARK'},
+      {key:'avgPos50', label:'AVG TOP MARK'},
       {key:'avgStartPct', label:'START %'},
       {key:'ocsCount', label:'OCS'},
     ];
@@ -4313,7 +4313,7 @@ function renderEventSummary(panelEl, allRaces){
         <td style="text-align:center">${deltaCell(ag.avgDelta)}</td>
         <td style="text-align:center;color:var(--muted);font-family:Share Tech Mono,monospace">${ag.avgDist!=null?ag.avgDist.toFixed(1)+'m':'—'}</td>
         <td style="text-align:center;color:var(--muted);font-family:Share Tech Mono,monospace">${ag.avgSog!=null?ag.avgSog.toFixed(1)+'kts':'—'}</td>
-        <td style="text-align:center;color:var(--muted);font-family:Share Tech Mono,monospace">${ag.avgT95!=null?ag.avgT95.toFixed(1)+'s':'—'}</td>
+        <td style="text-align:center"><span class="ds-fin-n" style="font-family:Orbitron,monospace;font-size:11px;color:${col}">${ag.avgPos50!=null?ag.avgPos50.toFixed(1):'—'}</span></td>
         <td style="text-align:center;color:var(--muted);font-family:Share Tech Mono,monospace">${ag.avgStartPct!=null?Math.round(ag.avgStartPct)+'%':'—'}</td>
         <td style="text-align:center">${ocsCell(ag.ocsCount)}</td>
       </tr>`;
@@ -4340,7 +4340,7 @@ function renderEventSummary(panelEl, allRaces){
 
   const fleetAvgSog = avg(allBoats.map(b=>aggr[b].avgSog));
   const fleetAvgDist = avg(allBoats.map(b=>aggr[b].avgDist));
-  const fleetAvgT95 = avg(allBoats.map(b=>aggr[b].avgT95));
+  const fleetAvgT95 = null; // removed
   const totalOCS = sum(allBoats.map(b=>aggr[b].ocsCount));
 
   panelEl.innerHTML=`
