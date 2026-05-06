@@ -179,19 +179,23 @@ export function startLineMetrics(point, startLine, boatLengthM = 9.6) {
   };
 }
 
-export function lineBiasMetres(startLine, windDir) {
+export function lineBiasMetres(startLine, windDir, opts = {}) {
   if (!startLine?.rc || !startLine?.pin || !Number.isFinite(windDir)) return null;
+  const { squareDeadbandM = 0.5, squareDeadbandDeg = 0.25 } = opts;
   const { rc, pin } = startLine;
   const lineLengthM = hav(rc.lat, rc.lon, pin.lat, pin.lon);
   const lineAxis = brg(pin.lat, pin.lon, rc.lat, rc.lon);
   const squareAxis = (windDir + 90 + 360) % 360;
-  const biasDeg = signedAngle(lineAxis, squareAxis);
-  const biasM = Math.sin(biasDeg * Math.PI / 180) * lineLengthM;
+  const rawBiasDeg = signedAngle(lineAxis, squareAxis);
+  const rawBiasM = Math.sin(rawBiasDeg * Math.PI / 180) * lineLengthM;
+  const isSquare = Math.abs(rawBiasM) <= squareDeadbandM || Math.abs(rawBiasDeg) <= squareDeadbandDeg;
+  const biasDeg = isSquare ? 0 : rawBiasDeg;
+  const biasM = isSquare ? 0 : rawBiasM;
   return {
     lineLengthM: +lineLengthM.toFixed(1),
     biasDeg: +biasDeg.toFixed(1),
     biasM: +biasM.toFixed(1),
-    favouredEnd: biasM > 0 ? 'RC' : biasM < 0 ? 'PIN' : 'SQUARE'
+    favouredEnd: isSquare ? 'SQUARE' : biasM > 0 ? 'RC' : 'PIN'
   };
 }
 
