@@ -4299,7 +4299,7 @@ function renderEventSummary(panelEl, allRaces){
     }).join('');
 
     const rows = boats.map((b,i)=>{
-      const ag=aggr[b], c=COL[b]||'#888', rank=reachRankMap[b];
+      const ag=aggr[b], c=COL[b]||'#888', rank=pos50RankMap[b];
       return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)${i%2?' ':';background:rgba(255,255,255,.02)'}">
         <td style="padding:5px 8px">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:6px;vertical-align:middle"></span>
@@ -4340,6 +4340,7 @@ function renderEventSummary(panelEl, allRaces){
 
   const fleetAvgSog = avg(allBoats.map(b=>aggr[b].avgSog));
   const fleetAvgDist = avg(allBoats.map(b=>aggr[b].avgDist));
+  const fleetAvgT95  = null; // removed
   const fleetAvgT95 = null; // removed
   const totalOCS = sum(allBoats.map(b=>aggr[b].ocsCount));
 
@@ -4551,7 +4552,7 @@ function renderDaySummary(panelEl, event, races){
     const rows = boats.map(b=>{
       const ag = aggr[b]; const col = COL[b]||'#888';
       const team = TEAM_NAMES[b] || '';
-      const reachRank = reachRankMap[b];
+      const reachRank = pos50RankMap[b];
       return `<tr>
         <td><div class="cell-boat">
           <div class="boat-dot" style="background:${col}"></div>
