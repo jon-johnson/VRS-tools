@@ -199,6 +199,7 @@ tr:hover td{background:var(--bg3)}
 .spark-wrap{display:flex;align-items:center;gap:4px}
 .spark{display:inline-flex;align-items:flex-end;gap:1px;height:20px}
 .spark-bar{width:6px;background:var(--cyan);border-radius:1px 1px 0 0;opacity:.7;transition:height .3s}
+.course-card,.wind-card{display:none!important}
 
 /* ── WIND CANVAS ── */
 #cWindDay{display:block;width:100%;height:120px}
@@ -3101,8 +3102,8 @@ function renderRacePanel(panelEl, rd){
     </tr></thead><tbody id="${startBodyId}"></tbody></table></div>
 
     <!-- PAGE 2 — Leg 1 table first -->
-    <div class="sh page2-start">LEG 1 — TOP MARK ORDER · upwind VMG &amp; speed to WW mark</div>
-    <div class="table-scroll"><table class="reach-table" id="${l1TableId}"><thead><tr>
+    <div class="sh page2-start" style="display:none">LEG 1 — TOP MARK ORDER · upwind VMG &amp; speed to WW mark</div>
+    <div class="table-scroll" style="display:none"><table class="reach-table" id="${l1TableId}"><thead><tr>
       <th data-col="rank" style="cursor:pointer" onclick="sortTable('${l1TableId}','rank','asc',false)">#</th>
       <th>Boat</th>
       <th data-col="dist" style="cursor:pointer" onclick="sortTable('${l1TableId}','dist','asc',false)">Dist to WW ⇅<br><span style="font-weight:400;font-size:7px">metres at T+50s</span></th>
@@ -3158,7 +3159,7 @@ function renderRacePanel(panelEl, rd){
         })()}
       </div>
 
-      <div class="course-card" style="display:none">
+      <div class="course-card">
         <div class="sh" style="margin-top:0">COURSE OVERVIEW</div>
         <div class="mc" style="flex-shrink:0">
           <div class="mh">FULL RACE TRACKS · COURSE AXIS &nbsp;</div>
@@ -3166,7 +3167,7 @@ function renderRacePanel(panelEl, rd){
         </div>
       </div>
 
-      <div class="wind-card" style="display:none">
+      <div class="wind-card">
         <div class="sh" style="margin-top:0">WIND INFERENCE</div>
         <div class="mc">
           <div class="mh" style="font-size:7px">PORT/STBD TACK &amp; GYBE SEGMENTS · INFERRED DIRECTION</div>
@@ -4019,7 +4020,9 @@ function renderStartR(rd){
   const ocsSet = rd.ocsFromTelemetry || new Set();
 
   // Build official finish positions from OFFICIAL_RESULTS_BY_DAY
-  const officialRaceResults = ((OFFICIAL_RESULTS_BY_DAY[rd.event?._dayIdx??1] || OFFICIAL_RESULTS_BY_DAY[1])||{})[raceNum] || {};
+  const _di = rd.event?._dayIdx ?? 0;
+  const _dayResults = OFFICIAL_RESULTS_BY_DAY[_di] || OFFICIAL_RESULTS_BY_DAY[_di+1] || OFFICIAL_RESULTS_BY_DAY[Object.keys(OFFICIAL_RESULTS_BY_DAY)[0]] || {};
+  const officialRaceResults = _dayResults[raceNum] || {};
   const finPos = {};
   for(const [sail, pos] of Object.entries(officialRaceResults)){
     if(typeof pos === 'number') finPos[sail] = pos;
@@ -4076,7 +4079,7 @@ function renderStartR(rd){
     tr.dataset.fin    = String(fin ?? 9999);
     tr.dataset.ocs    = isOCS ? '1' : '0';
     if(isOCS) tr.style.cssText = 'background:rgba(255,51,85,.12);border-left:3px solid #ff3355';
-    else if(s.sail === 'GBR1942') tr.style.cssText = 'background:rgba(255,68,68,.10);border-left:3px solid #ff4444';
+    else if(s.sail === 'GBR1942') tr.style.cssText = 'background:rgba(255,68,68,.15);border-left:4px solid #ff4444;outline:1px solid rgba(255,68,68,.3)';
 
     tr.innerHTML = `
       <td><div class="td"><span class="rk ${rk}">#${i+1}</span></div></td>
