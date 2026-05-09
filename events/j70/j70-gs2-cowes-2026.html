@@ -2312,11 +2312,22 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   }
   
   // RC and PIN identification using per-event mark SNs
+  // Compute fleet centroid first so we can sanity-check mark distances
+  const _fleetPts4RC = Object.values(tracks).flatMap(t=>{
+    const p=t.find(p=>Math.abs(p.ts-gunTs)<5000); return p?[p]:[];
+  });
+  const _cLat4RC = _fleetPts4RC.length ? _fleetPts4RC.reduce((a,b)=>a+b.lat,0)/_fleetPts4RC.length : null;
+  const _cLon4RC = _fleetPts4RC.length ? _fleetPts4RC.reduce((a,b)=>a+b.lon,0)/_fleetPts4RC.length : null;
+  const _markOK = (m) => {
+    if(!m || !_cLat4RC) return false;
+    const d=hav(_cLat4RC,_cLon4RC,m.lat,m.lon);
+    return d < 400; // reject marks >400m from fleet (line was reset, marks in wrong place)
+  };
   let RC, PIN;
   for(const sn of eventGates.RC_SNS){
-    if(markPos[sn]){ RC = markPos[sn]; break; }
+    if(markPos[sn] && _markOK(markPos[sn])){ RC = markPos[sn]; break; }
   }
-  if(markPos[eventGates.PIN_SN]) PIN = markPos[eventGates.PIN_SN];
+  if(markPos[eventGates.PIN_SN] && _markOK(markPos[eventGates.PIN_SN])) PIN = markPos[eventGates.PIN_SN];
 
   // ─── START LINE MARK SELECTION ────────────────────────────────────────
   // Strategy:
