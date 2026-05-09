@@ -421,7 +421,7 @@ tr:hover td{background:var(--bg3)}
       };
       const fields = doc.fields;
       const divisions = parseValue(fields.divisions);
-      const div = divisions?.find(d => d.name === 'C31' || d.boatClass === 'C31' || d.name === 'Cape 31') || divisions?.[0];
+      const div = divisions?.find(d => d.name === 'C31' || d.boatClass === 'C31' || d.name === 'J70') || divisions?.[0];
       if(!div?.races) return null;
       const guns = [];
       for(const race of div.races) {
@@ -534,6 +534,7 @@ const REGATTA_SUBTITLE = 'Cowes, Royal Thames YC · 9-10 May 2026 · BST (UTC+1)
 const EVENTS = [
   {
     id: 'eTg9LhKGLTtOVD9f01Gb',
+    division: 'J70_GS2',
     label: 'DAY 1',
     date: '2026-05-09',
     tz: 'BST', tzOffset: 1,
@@ -2152,7 +2153,10 @@ let rmTS={};
 //  API
 // ══════════════════════════════════════════════════════════════════
 async function fetchTelemetry(eventId, after, before, limit=5000){
-  const url = `https://teleapi.regatta.app/telemetry/event/${eventId}?after=${after}&before=${before}&limit=${limit}&division=C31`;
+  // Find the division for this event
+  const _ev = EVENTS.find(e => e.id === eventId);
+  const _div = _ev?.division || 'C31';
+  const url = `https://teleapi.regatta.app/telemetry/event/${eventId}?after=${after}&before=${before}&limit=${limit}&division=${_div}`;
   const r = await fetch(url);
   if(!r.ok) throw new Error(`HTTP ${r.status}`);
   const d = await r.json();
@@ -2208,7 +2212,8 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   const markWindowEnd   = gunTs + 600000;   // 10 min after gun
   let markRows = [];
   try {
-    const markUrl = `https://teleapi.regatta.app/telemetry/event/${event.id}?after=${markWindowStart}&before=${markWindowEnd}&limit=20000&division=C31`;
+    const _mDiv = event.division || 'C31';
+  const markUrl = `https://teleapi.regatta.app/telemetry/event/${event.id}?after=${markWindowStart}&before=${markWindowEnd}&limit=20000&division=${_mDiv}`;
     const markResp = await fetch(markUrl);
     const markData = await markResp.json();
     if(markData && markData.Rows){
@@ -4686,7 +4691,7 @@ function buildUI(){
   const dayPanelsEl= document.getElementById('dayPanels');
 
   document.getElementById('hdrDays').textContent = `${EVENTS.length} day${EVENTS.length>1?'s':''}`;
-  document.getElementById('hdrFleet').textContent = 'Cape 31';
+  document.getElementById('hdrFleet').textContent = 'J70';
   document.getElementById('regattatitle').textContent = REGATTA_TITLE;
   document.getElementById('regattasub').textContent = REGATTA_SUBTITLE;
   document.title = REGATTA_SUBTITLE + ' · Race Report';
