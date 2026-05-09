@@ -3356,8 +3356,8 @@ function lineHeatColor(norm){
   return 'rgba(255,60,60,0.96)';
 }
 function reachRankColor(rd, sail){
-  if(sail === 'GBR1942') return '#ff4444';  // Lady Khumbu always red
-  return COL[sail] || '#ffffff';
+  if(sail === 'GBR1942') return '#ff4444';
+  return '#22c55e';
 }
 function isVisibleAtGunReplay(rd, sail){
   const gd = rd?.GUND?.find(d=>d.sail===sail);
@@ -3370,8 +3370,8 @@ function visibleGunBoats(rd){
 }
 
 function gunMapBoatColor(rd, sail){
-  if(sail === 'GBR1942') return '#ff4444';  // Lady Khumbu always red
-  return COL[sail] || '#22c55e';
+  if(sail === 'GBR1942') return '#ff4444';
+  return '#22c55e';
 }
 
 function drawGunR(rd){
