@@ -1705,7 +1705,7 @@ function drawGun(mpp_ref){
   });
   p2.forEach((d)=>drawCat(ctx,tX(d.rx),tY(d.ry),d.hdg,reachRankColor(rd, d.sail),d.sail,mpp,null));
   // Speed legend
-  ctx.save();p2.forEach((d,i)=>{ctx.fillStyle=COL[d.sail];ctx.font='8px Share Tech Mono';ctx.textAlign='left';ctx.fillText(`#${d.sail} ${d.sog.toFixed(1)} kts`,14,18+i*13)});ctx.restore();
+  // sidebar boat list removed
   scaleBar(ctx,mpp,W,H);
 }
 
@@ -3779,7 +3779,7 @@ function drawT50R(rd){
       const t=tracks[sail];if(!t)continue;
       const seg=t.filter(p=>p.ts>=GUN&&p.ts<=T50ts);
       if(seg.length<2)continue;
-      ctx.save();ctx.strokeStyle=(COL[sail]||'#888')+'50';ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.save();ctx.strokeStyle=reachRankColor(rd,sail)+'50';ctx.lineWidth=1.5;ctx.beginPath();
       let first=true;
       for(const p of seg){
         const[bx2,by2]=[tX(r(toM(p.lat,p.lon).x,toM(p.lat,p.lon).y).rx),tY(r(toM(p.lat,p.lon).x,toM(p.lat,p.lon).y).ry)];
@@ -3804,10 +3804,11 @@ function drawT50R(rd){
   p2.forEach((d)=>{
     const bx=tX(d.rx),by=tY(d.ry);
     const screenHdgT50 = d.hdg - rotDegT50;
-    drawCat(ctx,bx,by,screenHdgT50,COL[d.sail],d.sail,mpp,null);
-    ctx.save();ctx.fillStyle=COL[d.sail]+'95';ctx.font='8px Share Tech Mono';ctx.textAlign='center';
+    const _t50c=reachRankColor(rd,d.sail);
+    drawCat(ctx,bx,by,screenHdgT50,_t50c,d.sail,mpp,null);
+    ctx.save();ctx.fillStyle=_t50c+'95';ctx.font='8px Share Tech Mono';ctx.textAlign='center';
     ctx.fillText(d.avg.toFixed(1)+' kts',bx,by+22);
-    ctx.fillStyle=COL[d.sail]+'70';ctx.fillText(Math.round(d.dist)+'m',bx,by-24);ctx.restore();
+    ctx.fillStyle=_t50c+'70';ctx.fillText(Math.round(d.dist)+'m',bx,by-24);ctx.restore();
   });
   if(rm){
     const rmM=toM(rm.lat,rm.lon),rmR=r(rmM.x,rmM.y);
