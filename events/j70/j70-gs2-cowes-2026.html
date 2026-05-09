@@ -82,11 +82,11 @@ a{color:var(--cyan);text-decoration:none}
 
 .map2>.mc{align-self:stretch}
 
-.replayStartGrid{display:grid;grid-template-columns:minmax(360px,460px) minmax(0,1fr);gap:12px;align-items:start;margin-bottom:8px}
+.replayStartGrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start;margin-bottom:8px}
 .replayStartGrid>.mc{min-width:0}
 .replayStartGrid>*{min-width:0}
-.replayPortraitCard{max-width:460px;width:100%;justify-self:start}
-.replayCanvasPortrait{display:block;width:100%;max-width:460px;aspect-ratio:3/5;margin:0 auto;touch-action:auto}
+.replayPortraitCard{max-width:none;width:100%;justify-self:stretch}
+.replayCanvasPortrait{display:block;width:100%;max-width:none;aspect-ratio:16/6;margin:0 auto;touch-action:auto}
 .replayControls{display:flex;align-items:center;gap:8px;font-size:8px;flex-wrap:wrap;justify-content:flex-end}
 .replaySpeedGroup{display:flex;align-items:center;gap:4px}
 .replaySpeedBtn{background:#0d1624;border:1px solid #2e4965;color:#9cc5ff;border-radius:6px;padding:3px 7px;font:700 9px Orbitron,sans-serif;cursor:pointer}
@@ -543,7 +543,7 @@ const EVENTS = [
     dayEnd:   1778346000000,   // 18:00 BST
     knownGuns: [
       [1, 1778328000000],   // 13:00 BST
-      [2, 1778332500000],   // 14:15 BST
+      [2, 1778332723800],   // 14:18:43 BST — actual gun (telemetry in_progress)
       [3, 1778336100000],   // 15:15 BST
       [4, 1778339400000],   // 16:10 BST
     ],
@@ -565,8 +565,8 @@ function getGateSNs(event){
 
 // ── Fleet config ──────────────────────────────────────────────────
 // EXCLUDED_BOATS: sail numbers to ignore (RC boat, bow boat, chase boat)
-const EXCLUDED_BOATS = ['GBR1381','GBR881'];  // mark/RC devices not in results
-const BOATS_ALL = ["GBR1247", "GBR1942", "GBR1572", "GBR1169", "GBR937", "GBR1905", "GBR1248", "GBR1384", "GBR1591", "GBR974", "GBR1205", "GBR1327", "GBR120", "ESP1284", "GBR1203", "GBR1864", "GBR1051", "GBR290", "GBR1867", "GBR747", "GBR1451", "GBR746", "GBR1123"];
+const EXCLUDED_BOATS = [];  // all telemetry SNs are competitors
+const BOATS_ALL = ["GBR1247", "GBR1942", "GBR1572", "GBR1169", "GBR937", "GBR1905", "GBR1248", "GBR1384", "GBR1591", "GBR974", "GBR1205", "GBR1327", "GBR120", "GBR881", "GBR1203", "GBR1864", "GBR1051", "GBR290", "GBR1867", "GBR747", "GBR1381", "GBR746", "GBR1123"];
 
 // Boat colours — one per competing sail number
 const COL = {
@@ -583,14 +583,14 @@ const COL = {
   'GBR1205': '#24f2a1',
   'GBR1327': '#24f2d7',
   'GBR120': '#24d7f2',
-  'ESP1284': '#24a1f2',
+  'GBR881': '#24a1f2',
   'GBR1203': '#246bf2',
   'GBR1864': '#2436f2',
   'GBR1051': '#4824f2',
   'GBR290': '#7d24f2',
   'GBR1867': '#b324f2',
   'GBR747': '#e924f2',
-  'GBR1451': '#f224c5',
+  'GBR1381': '#f224c5',
   'GBR746': '#f2248f',
   'GBR1123': '#f2245a',
 };
@@ -610,14 +610,14 @@ const TEAM_NAMES = {
   'GBR1205': 'Joskin',
   'GBR1327': 'Wendy Deluxe',
   'GBR120': 'Sardonyx',
-  'ESP1284': 'XV Manta',
+  'GBR881': 'XV Manta',
   'GBR1203': 'Moral Compass',
   'GBR1864': 'Juno II',
   'GBR1051': 'Escape',
   'GBR290': 'Jenga 8',
   'GBR1867': 'Genius',
   'GBR747': 'BB',
-  'GBR1451': 'Lightfoot Racing Spirit',
+  'GBR1381': 'Lightfoot Racing Spirit',
   'GBR746': 'Jiant Peach',
   'GBR1123': 'Jumpstart',
 };
@@ -629,10 +629,10 @@ const TEAM_NAMES = {
 const OFFICIAL_RESULTS_BY_DAY = {
   // Day 1 (9 May 2026) — API races 1,2,3,4
   1: {
-    1: {"GBR1247": 9, "GBR1942": 1, "GBR1572": 4, "GBR1169": 16, "GBR937": 7, "GBR1905": 2, "GBR1248": 3, "GBR1384": 14, "GBR1591": 8, "GBR974": 5, "GBR1205": 10, "GBR1327": 6, "GBR120": 15, "ESP1284": 21, "GBR1203": 13, "GBR1864": 12, "GBR1051": 11, "GBR290": 19, "GBR1867": 20, "GBR747": 23, "GBR1451": 17, "GBR746": 18, "GBR1123": 22},
-    2: {"GBR1247": 1, "GBR1942": 2, "GBR1572": 3, "GBR1169": 5, "GBR937": 18, "GBR1905": 15, "GBR1248": 9, "GBR1384": 4, "GBR1591": 11, "GBR974": 7, "GBR1205": 12, "GBR1327": 13, "GBR120": 6, "ESP1284": 8, "GBR1203": 14, "GBR1864": 19, "GBR1051": 17, "GBR290": 16, "GBR1867": 10, "GBR747": 22, "GBR1451": 20, "GBR746": 21, "GBR1123": 23},
-    3: {"GBR1247": 2, "GBR1942": 5, "GBR1572": 1, "GBR1169": 3, "GBR937": 6, "GBR1905": 16, "GBR1248": 8, "GBR1384": 4, "GBR1591": 10, "GBR974": 13, "GBR1205": 7, "GBR1327": 14, "GBR120": 17, "ESP1284": 15, "GBR1203": 19, "GBR1864": 9, "GBR1051": 21, "GBR290": 12, "GBR1867": 18, "GBR747": 11, "GBR1451": 20, "GBR746": 22, "GBR1123": 23},
-    4: {"GBR1247": 1, "GBR1942": 5, "GBR1572": 8, "GBR1169": 4, "GBR937": 3, "GBR1905": 2, "GBR1248": 14, "GBR1384": 18, "GBR1591": 6, "GBR974": 15, "GBR1205": 12, "GBR1327": 11, "GBR120": 10, "ESP1284": 9, "GBR1203": 7, "GBR1864": 16, "GBR1051": 13, "GBR290": 17, "GBR1867": 20, "GBR747": 19, "GBR1451": 22, "GBR746": 24, "GBR1123": 21},
+    1: {"GBR1247": 9, "GBR1942": 1, "GBR1572": 4, "GBR1169": 16, "GBR937": 7, "GBR1905": 2, "GBR1248": 3, "GBR1384": 14, "GBR1591": 8, "GBR974": 5, "GBR1205": 10, "GBR1327": 6, "GBR120": 15, "GBR881": 21, "GBR1203": 13, "GBR1864": 12, "GBR1051": 11, "GBR290": 19, "GBR1867": 20, "GBR747": 23, "GBR1381": 17, "GBR746": 18, "GBR1123": 22},
+    2: {"GBR1247": 1, "GBR1942": 2, "GBR1572": 3, "GBR1169": 5, "GBR937": 18, "GBR1905": 15, "GBR1248": 9, "GBR1384": 4, "GBR1591": 11, "GBR974": 7, "GBR1205": 12, "GBR1327": 13, "GBR120": 6, "GBR881": 8, "GBR1203": 14, "GBR1864": 19, "GBR1051": 17, "GBR290": 16, "GBR1867": 10, "GBR747": 22, "GBR1381": 20, "GBR746": 21, "GBR1123": 23},
+    3: {"GBR1247": 2, "GBR1942": 5, "GBR1572": 1, "GBR1169": 3, "GBR937": 6, "GBR1905": 16, "GBR1248": 8, "GBR1384": 4, "GBR1591": 10, "GBR974": 13, "GBR1205": 7, "GBR1327": 14, "GBR120": 17, "GBR881": 15, "GBR1203": 19, "GBR1864": 9, "GBR1051": 21, "GBR290": 12, "GBR1867": 18, "GBR747": 11, "GBR1381": 20, "GBR746": 22, "GBR1123": 23},
+    4: {"GBR1247": 1, "GBR1942": 5, "GBR1572": 8, "GBR1169": 4, "GBR937": 3, "GBR1905": 2, "GBR1248": 14, "GBR1384": 18, "GBR1591": 6, "GBR974": 15, "GBR1205": 12, "GBR1327": 11, "GBR120": 10, "GBR881": 9, "GBR1203": 7, "GBR1864": 16, "GBR1051": 13, "GBR290": 17, "GBR1867": 20, "GBR747": 19, "GBR1381": 22, "GBR746": 24, "GBR1123": 21},
   },
 };
 // Internal — do not edit
@@ -646,8 +646,8 @@ let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 const GATE_SNS = {
   WW: [],
   LW: [],
-  RC_SNS: [25935],   // RC boat (NE end of line) — confirmed from R1 telemetry
-  PIN_SN: 25966,     // Pin buoy (SW end of line) — confirmed, SN 25937 is co-located backup
+  RC_SNS: [25966],   // RC boat — corrected (user confirmed SW end)
+  PIN_SN: 25935,     // Pin buoy — corrected (user confirmed NE end), SN 25937 co-located
 };
 
 // No hardcoded mark positions — auto-detected from telemetry
@@ -1456,7 +1456,7 @@ function inRange(h, lo, hi){
 
 
 // ─── CANVAS SETUP ───
-function cvs(id,h){const c=document.getElementById(id),W=c.offsetWidth;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
+function cvs(id,h,w){const c=document.getElementById(id),W=c.offsetWidth;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
 function cbg(ctx,W,H){ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H)}
 function nmark(ctx,W,H){const x=W-30,y=22;ctx.save();for(let a=0;a<360;a+=45){const r=a*D2R;ctx.strokeStyle='rgba(0,204,255,.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(r)*12,y-Math.cos(r)*12);ctx.stroke()}ctx.fillStyle='rgba(0,204,255,.4)';ctx.font='7px Orbitron';ctx.textAlign='center';ctx.fillText('N',x,y-16);ctx.restore()}
 
@@ -3626,15 +3626,13 @@ function startReplayLayout(rd,W,H){
   const g=rd._replayGeom || (rd._replayGeom=buildStartReplayGeom(rd));
   if(!g) return null;
   const {rcR,pnR,lineLen,sampleXs,sampleYs}=g;
-  const topPad=36, bottomPad=36, leftPad=46, rightPad=46;
-  let scale=(H-topPad-bottomPad)/lineLen;
+  const topPad=36, bottomPad=36, leftPad=56, rightPad=56;
   const cxOff=(rcR.rx+pnR.rx)/2, cyOff=(rcR.ry+pnR.ry)/2;
-  const scaledMinX=Math.min(...sampleXs.map(v=>(v-cxOff)*scale));
-  const scaledMaxX=Math.max(...sampleXs.map(v=>(v-cxOff)*scale));
-  const maxAllowedW=W-leftPad-rightPad;
-  const neededW=scaledMaxX-scaledMinX;
-  if(neededW>maxAllowedW) scale*=maxAllowedW/neededW;
-  scale *= 1.3;
+  const {ySpan,widthSpan}=g;
+  // Fit the FULL fleet: scale to whichever axis is the binding constraint
+  const scaleH=(H-topPad-bottomPad)/Math.max(ySpan,lineLen,1);
+  const scaleW=(W-leftPad-rightPad)/Math.max(widthSpan,lineLen,1);
+  let scale=Math.min(scaleH,scaleW)*0.92;  // 8% margin
   const scaledMinX2=Math.min(...sampleXs.map(v=>(v-cxOff)*scale));
   const scaledMaxX2=Math.max(...sampleXs.map(v=>(v-cxOff)*scale));
   const plotCX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
@@ -3648,7 +3646,7 @@ function startReplayLayout(rd,W,H){
 }
 
 function drawStartReplayFrame(rd, relSec){
-  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetH=Math.max(620, Math.round((replayWEl?.offsetWidth||380)*1.62)); const {ctx,W,H}=cvs(raceDomId(rd,'cReplay'),targetH); cbg(ctx,W,H);
+  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetW=Math.max(600, replayWEl?.offsetWidth||800); const targetH=Math.round(targetW*6/16); const {ctx,W,H}=cvs(raceDomId(rd,'cReplay'),targetH,targetW); cbg(ctx,W,H);
   const lay=startReplayLayout(rd,W,H); if(!lay) return;
   const {tX,tY,rx,ry,px,py,mpp,rot}=lay;
   const {toM,r}=rd._replayGeom;
