@@ -3097,7 +3097,7 @@ function renderRacePanel(panelEl, rd){
       <th data-col="dtl" data-dir="desc" style="cursor:pointer" title="Signed: + safe, − OCS" onclick="sortTable('${startTableId}','dtl','desc',true)">DTL@Gun ⇅<br><span style="font-weight:400;font-size:7px">+ safe  − OCS</span></th>
       <th data-col="spd" data-dir="desc" style="cursor:pointer" onclick="sortTable('${startTableId}','spd','desc',true)">Speed@Gun ⇅</th>
       <th data-col="linepct" data-dir="desc" style="cursor:pointer" onclick="sortTable('${startTableId}','linepct','desc',true)">Line End ⇅<br><span style="font-weight:400;font-size:7px">RC / MID / PIN</span></th>
-      <th data-col="pos50" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','pos50','asc',true)">Top Mark ⇅<br><span style="font-weight:400;font-size:7px">rank at WW mark</span></th>
+      <th data-col="fin" data-dir="asc" style="cursor:pointer" onclick="sortTable('${startTableId}','fin','asc',true)">Finish ⇅<br><span style="font-weight:400;font-size:7px">official result</span></th>
     </tr></thead><tbody id="${startBodyId}"></tbody></table></div>
 
     <!-- PAGE 2 — Leg 1 table first -->
@@ -3158,7 +3158,7 @@ function renderRacePanel(panelEl, rd){
         })()}
       </div>
 
-      <div class="course-card">
+      <div class="course-card" style="display:none">
         <div class="sh" style="margin-top:0">COURSE OVERVIEW</div>
         <div class="mc" style="flex-shrink:0">
           <div class="mh">FULL RACE TRACKS · COURSE AXIS &nbsp;</div>
@@ -3166,7 +3166,7 @@ function renderRacePanel(panelEl, rd){
         </div>
       </div>
 
-      <div class="wind-card">
+      <div class="wind-card" style="display:none">
         <div class="sh" style="margin-top:0">WIND INFERENCE</div>
         <div class="mc">
           <div class="mh" style="font-size:7px">PORT/STBD TACK &amp; GYBE SEGMENTS · INFERRED DIRECTION</div>
@@ -3355,11 +3355,8 @@ function lineHeatColor(norm){
   return 'rgba(255,60,60,0.96)';
 }
 function reachRankColor(rd, sail){
-  const idx = (rd?.l1Order || []).indexOf(sail);
-  if(idx===0) return '#ffcc00';
-  if(idx===1) return '#cfcfcf';
-  if(idx===2) return '#c87c3e';
-  return '#ffffff';
+  if(sail === 'GBR1942') return '#ff4444';  // Lady Khumbu always red
+  return COL[sail] || '#ffffff';
 }
 function isVisibleAtGunReplay(rd, sail){
   const gd = rd?.GUND?.find(d=>d.sail===sail);
@@ -3372,11 +3369,8 @@ function visibleGunBoats(rd){
 }
 
 function gunMapBoatColor(rd, sail){
-  const i=(rd?.l1Order||[]).indexOf(sail);
-  if(i===0) return '#ffcc00';
-  if(i===1) return '#d1d5db';
-  if(i===2) return '#cd7f32';
-  return '#22c55e';
+  if(sail === 'GBR1942') return '#ff4444';  // Lady Khumbu always red
+  return COL[sail] || '#22c55e';
 }
 
 function drawGunR(rd){
@@ -4024,19 +4018,19 @@ function renderStartR(rd){
 
   const ocsSet = rd.ocsFromTelemetry || new Set();
 
-  // Build Pos@T+50s from l1Order (rank in fleet 50s after gun)
-  // l1Order is sorted by distance sailed upwind at T+50s
-  const posT50 = {};
-  if(l1Order && l1Order.length){
-    l1Order.forEach((sail, i) => { posT50[sail] = i + 1; });
+  // Build official finish positions from OFFICIAL_RESULTS_BY_DAY
+  const officialRaceResults = ((OFFICIAL_RESULTS_BY_DAY[rd.event?._dayIdx??1] || OFFICIAL_RESULTS_BY_DAY[1])||{})[raceNum] || {};
+  const finPos = {};
+  for(const [sail, pos] of Object.entries(officialRaceResults)){
+    if(typeof pos === 'number') finPos[sail] = pos;
   }
 
-  // Sort by T+50s rank; OCS boats to bottom
+  // Sort by finish position; OCS at bottom; unknowns after known
   const ranked = [...startStats].sort((a, b) => {
     const aOCS = ocsSet.has(a.sail), bOCS = ocsSet.has(b.sail);
     if(aOCS && !bOCS) return 1;
     if(!aOCS && bOCS) return -1;
-    const pa = posT50[a.sail] ?? 999, pb = posT50[b.sail] ?? 999;
+    const pa = finPos[a.sail] ?? 9999, pb = finPos[b.sail] ?? 9999;
     return pa - pb;
   });
 
@@ -4070,13 +4064,7 @@ function renderStartR(rd){
                   : lp >= 67   ? '<span style="color:var(--orange);font-family:Orbitron,monospace;font-size:10px;font-weight:700">RC</span>'
                   :              '<span style="color:var(--muted2);font-family:Orbitron,monospace;font-size:10px">MID</span>';
 
-    // Pos@T+50s
-    const p50 = posT50[s.sail];
-    const p50pct = p50 ? ((nBoats - p50) / (nBoats - 1) * 100) : 0;
-    const p50col = p50 == null ? 'var(--muted)'
-                 : p50 <= 3   ? 'var(--green)'
-                 : p50 <= Math.ceil(nBoats/2) ? 'var(--yellow)'
-                 :               'var(--red)';
+    // (Pos@T+50s removed — using official finish position instead)
 
     const tr = document.createElement('tr');
     tr.dataset.rank   = String(i);
@@ -4084,9 +4072,11 @@ function renderStartR(rd){
     tr.dataset.dtl15  = String(s.distM15 ?? 9999);
     tr.dataset.spd    = String(s.sogGun ?? 0);
     tr.dataset.linepct = String(s.linePct ?? -1);
-    tr.dataset.pos50  = String(p50 ?? 999);
+    const fin = finPos[s.sail];
+    tr.dataset.fin    = String(fin ?? 9999);
     tr.dataset.ocs    = isOCS ? '1' : '0';
     if(isOCS) tr.style.cssText = 'background:rgba(255,51,85,.12);border-left:3px solid #ff3355';
+    else if(s.sail === 'GBR1942') tr.style.cssText = 'background:rgba(255,68,68,.10);border-left:3px solid #ff4444';
 
     tr.innerHTML = `
       <td><div class="td"><span class="rk ${rk}">#${i+1}</span></div></td>
@@ -4102,8 +4092,8 @@ function renderStartR(rd){
         <div class="bv" style="color:${c}">${s.sogGun!=null?s.sogGun.toFixed(1)+'kts':'—'}</div>
       </div></div></td>
       <td><div class="td">${endZone}</div></td>
-      <td><div class="td">${p50!=null?
-        `<div class="br"><div class="bb"><div class="bf" style="width:${p50pct.toFixed(1)}%;background:${c}"></div></div><div class="bv" style="color:${p50col}">P${p50}</div></div>`
+      <td><div class="td">${fin!=null?
+        `<span style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:${fin<=3?'var(--green)':fin<=10?'var(--yellow)':'var(--muted2)'}">${fin}</span>`
         :'<span style="color:var(--muted)">—</span>'
       }</div></td>
     `;
@@ -4778,7 +4768,7 @@ function buildUI(){
   // EVENT tab — overall averages across all days
   const et = document.createElement('div');
   et.className = 'day-tab event-tab';
-  et.textContent = 'EVENT';
+  et.textContent = 'EVENT'; et.style.display='none';
   et.dataset.day = 'event';
   et.onclick = ()=>showEventSummary();
   dayTabsEl.appendChild(et);
@@ -4857,8 +4847,10 @@ function buildRaceTabs(event, di, guns){
   event._races = new Array(guns.length).fill(null);
 
   // Day summary tab — FIRST (before race tabs)
+  // DAY AVG tab hidden
   const st = document.createElement('div');
   st.className = 'race-tab avg-tab';
+  st.style.display = 'none';
   st.textContent = 'DAY AVG';
   st.id = `summaryTab${di}`;
   st.onclick = ()=>{
