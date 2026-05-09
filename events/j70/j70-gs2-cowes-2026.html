@@ -543,7 +543,7 @@ const EVENTS = [
     dayEnd:   1778346000000,   // 18:00 BST
     knownGuns: [
       [1, 1778328000000],   // 13:00 BST
-      [2, 1778332724000],   // 14:18:44 BST (actual gun, delayed from stated 14:15)
+      [2, 1778332500000],   // 14:15 BST
       [3, 1778336100000],   // 15:15 BST
       [4, 1778339400000],   // 16:10 BST
     ],
@@ -646,8 +646,8 @@ let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 const GATE_SNS = {
   WW: [],
   LW: [],
-  RC_SNS: [25935],   // to be confirmed from telemetry
-  PIN_SN: 25966,     // to be confirmed from telemetry
+  RC_SNS: [25935],   // RC boat (NE end of line) — confirmed from R1 telemetry
+  PIN_SN: 25966,     // Pin buoy (SW end of line) — confirmed, SN 25937 is co-located backup
 };
 
 // No hardcoded mark positions — auto-detected from telemetry
@@ -2920,7 +2920,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
     RC, PIN, MID, rm, WF, WF_OBJ,
     WF_RACE_OBJ, WF_DAY_OBJ:null, WF_BLEND_OBJ:WF_OBJ,
     reachTimes, finTimes, l1stats, l1Order,
-    startStats, startBias, GUND, T50, dataQuality, vmgData, usedRCSN, usedPINSN,
+    startStats, startBias, GUND, T50, dataQuality, vmgData, usedRCSN, usedPINSN, autoDetectedPair,
     rmInference: rm ? rm.inference : null,
     ocsFromTelemetry,
     raceNum, event, nextGunTs,
@@ -3004,9 +3004,40 @@ function renderRacePanel(panelEl, rd){
       })():''}
       <div class="sc"><div class="sv">${slBrg!=null?slBrg.toFixed(1)+'°':'—'} · ${slLen}m</div><div class="sl">START LINE</div></div>
       <div class="sc"><div class="sv" id="${saxId}">${caBrg!=null?caBrg.toFixed(1)+'° / '+((caBrg+180)%360).toFixed(1)+'°':'—'}</div><div class="sl">COURSE AXIS</div></div>
-      <div class="sc"><div class="sv">${estStr} EST</div><div class="sl">GUN TIME</div></div>
+      <div class="sc"><div class="sv">${estStr} ${event.tz||'UTC'}</div><div class="sl">GUN TIME</div></div>
       <div class="sc"><div class="sv">${BOATS.length}</div><div class="sl">BOATS</div></div>
     </div>
+
+    <!-- Mark confirmation card -->
+    ${(()=>{
+      const rcSN = rd.usedRCSN, pinSN = rd.usedPINSN;
+      const auto = rd.autoDetectedPair;
+      const confLabel = auto ? (parseFloat(auto.meanPerp)<20?'HIGH':parseFloat(auto.meanPerp)<50?'MED':'LOW') : 'configured';
+      const confCol = auto ? (parseFloat(auto.meanPerp)<20?'var(--green)':parseFloat(auto.meanPerp)<50?'var(--yellow)':'var(--red)') : 'var(--teal)';
+      const method = auto ? 'auto-detected' : 'configured';
+      return `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px;padding:6px 12px;background:rgba(255,255,255,.04);border-radius:6px;border:1px solid var(--border);flex-wrap:wrap">
+        <span style="font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap">Start Marks</span>
+        <span style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--orange)">RC #${rcSN||'?'}</span>
+        <span style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--teal)">PIN #${pinSN||'?'}</span>
+        <span style="font-size:10px;color:${confCol};font-family:Orbitron,monospace">${confLabel}</span>
+        <span style="font-size:9px;color:var(--muted2)">${method}${auto?' · ⊥'+auto.meanPerp+'m':''}</span>
+        <button onclick="(function(){
+          const rcIn=prompt('RC mark SN (current: ${rcSN||'none'}):','${rcSN||''}');
+          const pinIn=prompt('PIN mark SN (current: ${pinSN||'none'}):','${pinSN||''}');
+          if(rcIn==null&&pinIn==null) return;
+          const g=EVENTS.find(ev=>ev.id==='${rd.event.id}');
+          if(!g) return;
+          if(!g.knownGuns) return;
+          for(const gun of g.knownGuns){
+            if(gun[0]===${rd.raceNum}){
+              gun[2]={RC:rcIn?parseInt(rcIn,10):null,PIN:pinIn?parseInt(pinIn,10):null};
+            }
+          }
+          delete raceCache['${rd.event.id}_d${rd.event._dayIdx}_r${rd.raceNum}'];
+          alert('Override set. Click R${rd.raceNum} tab to reload.');
+        })()" style="margin-left:auto;font-size:9px;font-family:Orbitron,monospace;padding:3px 8px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer">OVERRIDE</button>
+      </div>`;
+    })()}
 
     <!-- Start maps — PAGE 1 end -->
     <div class="sh">MAP VIEWS</div>
