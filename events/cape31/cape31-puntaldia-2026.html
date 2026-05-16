@@ -1443,7 +1443,7 @@ function inRange(h, lo, hi){
 
 
 // ─── CANVAS SETUP ───
-function cvs(id,h,w){const c=document.getElementById(id),W=c.offsetWidth;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
+function cvs(id,h,w){const c=document.getElementById(id);if(!c)return null;const W=w||c.offsetWidth||600;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';if(w)c.style.width=w+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
 function cbg(ctx,W,H){ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H)}
 function nmark(ctx,W,H){const x=W-30,y=22;ctx.save();for(let a=0;a<360;a+=45){const r=a*D2R;ctx.strokeStyle='rgba(0,204,255,.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(r)*12,y-Math.cos(r)*12);ctx.stroke()}ctx.fillStyle='rgba(0,204,255,.4)';ctx.font='7px Orbitron';ctx.textAlign='center';ctx.fillText('N',x,y-16);ctx.restore()}
 
