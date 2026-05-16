@@ -1629,7 +1629,7 @@ function mppForProj(tX,tY,lat1,lon1,lat2,lon2){
 // DRAW: (window.GUN||0) CANVAS
 // ──────────────────────────────────────────────
 function drawGun(mpp_ref){
-  const{ctx,W,H}=cvs('cGun',900);cbg(ctx,W,H);
+  const _cvs_=cvs('cGun',900);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
   const{tX,tY,rcR,pnR,p2}=rotProj(GUND,W,H,64,38);
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
   // Start line bearing label
@@ -1704,7 +1704,7 @@ function drawGun(mpp_ref){
 }
 
 function drawT50(rm){
-  const{ctx,W,H}=cvs('cT50',600);cbg(ctx,W,H);
+  const _cvs_=cvs('cT50',600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
   const{tX,tY,rcR,pnR,p2}=rotProj(T50,W,H,64,38);
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
   drawSL(ctx,rx,ry,px,py,true);
@@ -1755,7 +1755,7 @@ function drawCourse(tracks, rm, wf, markPos){
   // Course axis = 317.7° (LW→WW). Rotate by -42.3° so axis is vertical (WW at top).
   // Canvas sized to true aspect ratio of key marks: ~440px wide × 1000px tall.
   const CANVAS_W=440, CANVAS_H=1000;
-  const{ctx,W,H}=cvs('cCourse',CANVAS_H);cbg(ctx,W,H);
+  const _cvs_=cvs('cCourse',CANVAS_H);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
 
   const _axis = brg(LWGATE.lat,LWGATE.lon,WWGATE.lat,WWGATE.lon); // LW→WW bearing
   const THETA = (90 - _axis) * (Math.PI/180); // rotate so course axis points up
@@ -1919,7 +1919,7 @@ function drawWind(tracks,wind,canvasId){
     cEl.style.display='block';
     cEl.style.margin='10px auto 12px auto';
   }
-  const {ctx,W,H}=cvs(canvasId||'cWind', cEl?.offsetWidth||340); cbg(ctx,W,H);
+  const _cvs_=cvs(canvasId||'cWind', cEl?.offsetWidth||340);if(!_cvs_)return;const {ctx,W,H}=_cvs_; cbg(ctx,W,H);
   const wind_wf=wind&&wind.wf!=null?wind.wf:315;
   const samples=(wind?.race?.samples)||wind?.samples||{uwPort:[],uwStbd:[],dwPort:[],dwStbd:[]};
   const totalSamples = (samples.uwPort?.length||0) + (samples.uwStbd?.length||0) + (samples.dwPort?.length||0) + (samples.dwStbd?.length||0);
@@ -2032,7 +2032,7 @@ function drawWind(tracks,wind,canvasId){
 // ──────────────────────────────────────────────
 function drawDelta(l1,fin,canvasId){
   if(!document.getElementById(canvasId||'cDelta'))return;
-  const{ctx,W,H}=cvs(canvasId||'cDelta',290);ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H);
+  const _cvs_=cvs(canvasId||'cDelta',290);if(!_cvs_)return;const {ctx,W,H}=_cvs_;ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H);
   const x1=90,x2=W-90,rH=(H-44)/8;
   ctx.save();ctx.fillStyle='rgba(0,204,255,.45)';ctx.font='9px Share Tech Mono';ctx.textAlign='center';ctx.fillText('UPWIND ORDER',x1,16);ctx.fillText('FINISH',x2,16);ctx.restore();
   l1.forEach((sail,i)=>{const fi=fin.indexOf(sail),y1=28+i*rH+rH/2,y2=28+fi*rH+rH/2,d=i-fi;
@@ -3355,7 +3355,7 @@ function drawGunR(rd){
   const {raceNum,RC,PIN,gunTs,ocsFromTelemetry} = rd;
   const GUND = visibleGunBoats(rd);
   // Match the T+50 panel height so both cards line up, while fitting the start line tightly again.
-  const{ctx,W,H}=cvs(raceDomId(rd,'cGun'),600);cbg(ctx,W,H);
+  const _cvs_=cvs(raceDomId(rd,'cGun'),600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
   if(!GUND.length) return;
 
   const cLa=MID.lat,cLo=MID.lon;
@@ -3641,7 +3641,7 @@ function startReplayLayout(rd,W,H){
 }
 
 function drawStartReplayFrame(rd, relSec){
-  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetW=Math.max(600, replayWEl?.offsetWidth||800); const targetH=Math.round(targetW*6/16); const {ctx,W,H}=cvs(raceDomId(rd,'cReplay'),targetH,targetW); cbg(ctx,W,H);
+  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetW=Math.max(600, replayWEl?.offsetWidth||800); const targetH=Math.round(targetW*6/16); const _cvs_=cvs(raceDomId(rd,'cReplay'),targetH,targetW);if(!_cvs_)return;const {ctx,W,H}=_cvs_; cbg(ctx,W,H);
   const lay=startReplayLayout(rd,W,H); if(!lay) return;
   const {tX,tY,rx,ry,px,py,mpp,rot}=lay;
   const {toM,r}=rd._replayGeom;
@@ -3734,7 +3734,7 @@ function initStartReplayR(rd){
 
 function drawT50R(rd){
   const {raceNum,T50,RC,PIN,rm,tracks,gunTs} = rd;
-  const{ctx,W,H}=cvs(raceDomId(rd,'cT50'),600);cbg(ctx,W,H);
+  const _cvs_=cvs(raceDomId(rd,'cT50'),600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
 
   // Zoom 1.5x: compute natural fit, then scale up 1.5× around canvas centre
   // Use same rotProj but then boost the scale
@@ -3851,7 +3851,7 @@ function drawCourseR(rd){
   const CANVAS_H = Math.max(280, Math.min(500, Math.round(CANVAS_W * (rawSpanY/Math.max(rawSpanX,1)) + 80)));
   const mnX=Math.min(...rk.map(p=>p[0]))-50,mxX=Math.max(...rk.map(p=>p[0]))+50;
   const mnY=Math.min(...rk.map(p=>p[1]))-50,mxY=Math.max(...rk.map(p=>p[1]))+50;
-  const{ctx,W,H}=cvs(raceDomId(rd,'cCourse'),CANVAS_H);cbg(ctx,W,H);
+  const _cvs_=cvs(raceDomId(rd,'cCourse'),CANVAS_H);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
   const pad=44;
   const scale=Math.min((W-pad*2)/(mxX-mnX),(H-pad*2)/(mxY-mnY));
   const offX=pad+(W-pad*2-(mxX-mnX)*scale)/2;
