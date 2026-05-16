@@ -276,40 +276,55 @@ main {
   </div>
 </main>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const app = initializeApp({
-  apiKey: "AIzaSyC6840waRqWQP8K3nAHVdbL-Lyh_FuAZ6A",
-  authDomain: "vrs-sailing-tools.firebaseapp.com",
-  projectId: "vrs-sailing-tools",
-  storageBucket: "vrs-sailing-tools.firebasestorage.app",
-  messagingSenderId: "1075889442099",
-  appId: "1:1075889442099:web:37cdef2784422790cb0246"
-});
-const db = getFirestore(app);
-
-async function loadEvents() {
-  const snap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
-  const events = [];
-  snap.forEach(doc => events.push({ id: doc.id, ...doc.data() }));
-  return events;
-}
+<script>
+// ── EVENT DATABASE ─────────────────────────────────────────────────
+// Add new events here. class: 'Cape31' | 'J70' | 'Dragon' etc.
+// file path is relative to the events/<class-lowercase>/ directory.
+const EVENT_DB = [
+  {
+    id: 'cape31-puntaldia-2026',
+    name: 'Puntaldia',
+    date: '2026-05-15',
+    venue: 'Puntaldia, Sardinia',
+    class: 'Cape31',
+    file: 'cape31-puntaldia-2026.html',
+    races: [
+      {label:'R1 (ABD)'}, {label:'R1'}, {label:'R2'}
+    ]
+  },
+  {
+    id: 'j70-gs2-cowes-2026',
+    name: 'J70 GS2 Royal Thames',
+    date: '2026-05-09',
+    venue: 'Cowes, Royal Thames YC',
+    class: 'J70',
+    file: 'j70-gs2-cowes-2026.html',
+    races: [
+      {label:'R1'}, {label:'R2'}, {label:'R3'}, {label:'R4'},
+      {label:'R5'}, {label:'R6'}, {label:'R7'}
+    ]
+  },
+  {
+    id: 'cape31-porto-cervo-2026',
+    name: 'Porto Cervo',
+    date: '2026-04-23',
+    venue: 'Porto Cervo, Sardinia',
+    class: 'Cape31',
+    file: 'cape31-porto-cervo-2026.html',
+    races: [
+      {label:'Practice'}, {label:'Practice'}, {label:'Practice'},
+      {label:'R1'}, {label:'R2'}, {label:'R3'},
+      {label:'R4'}, {label:'R5'}, {label:'R6'}, {label:'R7'}
+    ]
+  },
+];
 
 async function render() {
   const dir = document.getElementById('eventDirectory');
   const filterBar = document.getElementById('filterBar');
   let activeClass = 'all';
 
-  let events;
-  try {
-    events = await loadEvents();
-  } catch(e) {
-    dir.innerHTML = `<div class="state-msg">Unable to load events — check Firestore rules.</div>`;
-    return;
-  }
+  const events = EVENT_DB;
 
   if (!events.length) {
     dir.innerHTML = `<div class="state-msg">No events yet.</div>`;
