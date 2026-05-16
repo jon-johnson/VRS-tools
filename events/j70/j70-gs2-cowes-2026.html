@@ -2220,7 +2220,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
   progressEl && (progressEl.textContent = `Loading Race ${raceNum} telemetry…`);
 
   window.GUN = gunTs; // set global for utility functions
-  const BEFORE_GUN = 35000;
+  const BEFORE_GUN = 100000;
   const AFTER_GUN  = 1200000; // 20 min
   const fetchEnd   = nextGunTs ? Math.min(gunTs + AFTER_GUN, nextGunTs - 1000) : gunTs + AFTER_GUN;
 
@@ -2889,7 +2889,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
       }
 
       // Avg approach speed T-30s → T-5s
-      const approach = t.filter(p => p.ts >= gunTs-30000 && p.ts <= gunTs-5000);
+      const approach = t.filter(p => p.ts >= gunTs-90000 && p.ts <= gunTs-5000);
       const avgSogApproach = approach.length
         ? approach.reduce((s,p)=>s+p.sog*0.539957,0)/approach.length : null;
 
@@ -3081,7 +3081,7 @@ function renderRacePanel(panelEl, rd){
     <div class="replayStartGrid">
       <div class="mc replayPortraitCard" style="margin-bottom:8px">
         <div class="mh" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <span>START REPLAY · T-45 TO T+30</span>
+          <span>START REPLAY · T-1:30 TO T+30</span>
           <div class="replayControls">
             <button id="${raceDomId(rd,'replayPlay')}" type="button" style="background:#102033;border:1px solid #2e4965;color:#dbeafe;border-radius:6px;padding:3px 8px;font:700 10px Orbitron,sans-serif;cursor:pointer">Pause</button>
             <div class="replaySpeedGroup">
@@ -3089,8 +3089,8 @@ function renderRacePanel(panelEl, rd){
               <button id="${raceDomId(rd,'replaySpeed2')}" type="button" class="replaySpeedBtn">2x</button>
               <button id="${raceDomId(rd,'replaySpeed4')}" type="button" class="replaySpeedBtn">4x</button>
             </div>
-            <input id="${raceDomId(rd,'replaySlider')}" type="range" min="-45" max="30" step="0.2" value="-45" style="width:180px">
-            <span id="${raceDomId(rd,'replayTime')}" style="font:700 10px Orbitron,sans-serif;color:var(--cyan);min-width:58px;text-align:right">T-45.0</span>
+            <input id="${raceDomId(rd,'replaySlider')}" type="range" min="-90" max="30" step="0.2" value="-90" style="width:180px">
+            <span id="${raceDomId(rd,'replayTime')}" style="font:700 10px Orbitron,sans-serif;color:var(--cyan);min-width:58px;text-align:right">T-90.0</span>
           </div>
         </div>
         <canvas id="${raceDomId(rd,'cReplay')}" class="replayCanvasPortrait"></canvas>
