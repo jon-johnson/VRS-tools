@@ -1548,26 +1548,18 @@ function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge,bowOffset=true){
 
   ctx.restore();
 
-  // Sail number — drawn OFFSET above the boat so the hull stays visible.
-  // Small leader keeps it associated with its boat in clusters.
+  // Sail number — small, behind the stern so the hull stays clear
   if(label){
-    const fontSize = Math.max(7, Math.min(10, L * 0.55));
-    const offY = Math.max(13, L*1.5 + 7);  // push label clear of the hull
-    const lx = cx, ly = cy - offY;
+    const fontSize = Math.max(4, Math.min(6, L * 0.30));  // half size
+    const hr = hdgDeg * D2R;
+    const fx2 = Math.sin(hr), fy2 = -Math.cos(hr);
+    // stern = opposite of bow direction, pushed L*1.5 behind centre
+    const lx = cx - fx2 * (L * 1.5), ly = cy - fy2 * (L * 1.5);
     ctx.save();
-    ctx.font = `bold ${fontSize}px Orbitron`;
+    ctx.font = `${fontSize}px Orbitron`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const tw = ctx.measureText(label).width;
-    // translucent pill background so label reads over tracks but doesn't block boats
-    ctx.fillStyle = 'rgba(11,15,23,0.66)';
-    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(lx-tw/2-3, ly-fontSize/2-2, tw+6, fontSize+4, 3); ctx.fill(); }
-    else ctx.fillRect(lx-tw/2-3, ly-fontSize/2-2, tw+6, fontSize+4);
-    // thin leader from label to boat
-    ctx.strokeStyle = color + '88';
-    ctx.lineWidth = 0.7;
-    ctx.beginPath(); ctx.moveTo(lx, ly+fontSize/2+2); ctx.lineTo(cx, cy-L*0.5); ctx.stroke();
-    ctx.fillStyle = color;
+    ctx.fillStyle = color + 'aa';
     ctx.fillText(label, lx, ly);
     ctx.restore();
   }
@@ -3541,11 +3533,12 @@ function drawGunR(rd){
     ctx.lineTo(ex-Math.sin(hr+0.4)*6,ey+Math.cos(hr+0.4)*6);
     ctx.closePath();ctx.fill();ctx.restore();
     drawCat(ctx,bx,by,screenHdg,boatCol,d.sail,mpp,null);
-    ctx.save();
-    ctx.fillStyle=boatCol;
-    ctx.font='bold 8px Share Tech Mono';
-    ctx.textAlign='left';
-    ctx.fillText(`${d.sog.toFixed(1)} kts`, bx+14, by+3);
+    // speed label — small, behind stern
+    {const hr2=screenHdg*D2R;const sx2=Math.sin(hr2),sy2=-Math.cos(hr2);
+    const sL=Math.max(2.0,5.4/mpp);
+    ctx.save();ctx.font=`5px Share Tech Mono`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=boatCol+'99';
+    ctx.fillText(`${d.sog.toFixed(1)}`,bx-sx2*sL*1.5,by-sy2*sL*1.5);ctx.restore();}
     ctx.restore();
   });
   // Speed legend top-left
@@ -3796,9 +3789,12 @@ function drawT50R(rd){
     const screenHdgT50 = d.hdg - rotDegT50;
     const _t50c=reachRankColor(rd,d.sail);
     drawCat(ctx,bx,by,screenHdgT50,_t50c,d.sail,mpp,null);
-    ctx.save();ctx.fillStyle=_t50c+'95';ctx.font='8px Share Tech Mono';ctx.textAlign='center';
-    ctx.fillText(d.avg.toFixed(1)+' kts',bx,by+22);
-    ctx.fillStyle=_t50c+'70';ctx.fillText(Math.round(d.dist)+'m',bx,by-24);ctx.restore();
+    // T+50 speed label — small, behind stern
+    {const hr2=screenHdgT50*D2R;const sx2=Math.sin(hr2),sy2=-Math.cos(hr2);
+    const sL=Math.max(2.0,5.4/mpp);
+    ctx.save();ctx.font='5px Share Tech Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=_t50c+'99';
+    ctx.fillText(d.avg.toFixed(1),bx-sx2*sL*1.5,by-sy2*sL*1.5);ctx.restore();}
   });
   if(rm){
     const rmM=toM(rm.lat,rm.lon),rmR=r(rmM.x,rmM.y);
