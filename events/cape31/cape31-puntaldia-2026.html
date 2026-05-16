@@ -3616,6 +3616,7 @@ function startReplayLayout(rd,W,H){
   const g=rd._replayGeom || (rd._replayGeom=buildStartReplayGeom(rd));
   if(!g) return null;
   const {rcR,pnR,lineLen,sampleXs,sampleYs}=g;
+  const {tracks,gunTs}=rd;
   const topPad=36, bottomPad=36, leftPad=56, rightPad=56;
   const cxOff=(rcR.rx+pnR.rx)/2, cyOff=(rcR.ry+pnR.ry)/2;
 
