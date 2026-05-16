@@ -1473,8 +1473,8 @@ function rotProj(pts,W,H,px,py){
   const cxOff=(Math.min(...allX)+Math.max(...allX))/2;
   const cyOff=(Math.min(...allY)+Math.max(...allY))/2;
   const plotCX=W/2, plotCY=H/2-18;
-  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
-  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
+  const tX=rx=>plotCX+(rx-cxOff)*scale;
+  const tY=ry=>plotCY-(ry-cyOff)*scale;
   return{tX,tY,rcR,pnR,p2};
 }
 
@@ -3390,8 +3390,8 @@ function drawGunR(rd){
   const lineCenterX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
   const plotCX=Math.max(leftPad - scaledMinX2, Math.min(W-rightPad - scaledMaxX2, lineCenterX));
   const plotCY=H/2-6;
-  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
-  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
+  const tX=rx=>plotCX+(rx-cxOff)*scale;
+  const tY=ry=>plotCY-(ry-cyOff)*scale;
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
 
   // "Forward of the line" = the course side, using the active reach mark when available.
@@ -3762,8 +3762,8 @@ function drawT50R(rd){
   const cxOff=(Math.min(...allX)+Math.max(...allX))/2;
   const cyOff=(Math.min(...allY)+Math.max(...allY))/2;
   const plotCX=W/2, plotCY=H/2-18;
-  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
-  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
+  const tX=rx=>plotCX+(rx-cxOff)*scale;
+  const tY=ry=>plotCY-(ry-cyOff)*scale;
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
 
   // Draw tracks from gun to T+50 (thin, faded)
