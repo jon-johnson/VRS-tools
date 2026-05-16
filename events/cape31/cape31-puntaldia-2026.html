@@ -3626,8 +3626,7 @@ function startReplayLayout(rd,W,H){
   for(const t of Object.values(tracks)){
     for(const p of t){
       if(p.ts >= gunTs-90000 && p.ts <= gunTs+31000){
-        const [rx,ry]=latLonToRelXY(p.lat,p.lon,rcR.lat,rcR.lon);
-        allRxs.push(rx-cxOff); allRys.push(ry-cyOff);
+        allRxs.push(p.rx-cxOff); allRys.push(p.ry-cyOff);
       }
     }
   }
