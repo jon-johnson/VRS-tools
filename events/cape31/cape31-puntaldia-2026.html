@@ -3619,34 +3619,24 @@ function startReplayLayout(rd,W,H){
   const topPad=36, bottomPad=36, leftPad=56, rightPad=56;
   const cxOff=(rcR.rx+pnR.rx)/2, cyOff=(rcR.ry+pnR.ry)/2;
 
-  // Collect ALL boat positions across the FULL replay window (not just gun snapshot)
-  // so the viewport never clips boats as the replay plays
-  const allRxs=[], allRys=[];
-  for(const t of Object.values(tracks)){
+  // Build bounding box from all track points in the replay window + marks
+  let minX=rcR.rx-cxOff, maxX=rcR.rx-cxOff;
+  let minY=rcR.ry-cyOff, maxY=rcR.ry-cyOff;
+  const _expand=(rx,ry)=>{ if(rx<minX)minX=rx; if(rx>maxX)maxX=rx; if(ry<minY)minY=ry; if(ry>maxY)maxY=ry; };
+  _expand(pnR.rx-cxOff, pnR.ry-cyOff);
+  for(const t of Object.values(tracks||{})){
     for(const p of t){
-      if(p.ts >= gunTs-90000 && p.ts <= gunTs+31000){
-        allRxs.push(p.rx-cxOff); allRys.push(p.ry-cyOff);
-      }
+      if(p.ts>=gunTs-95000 && p.ts<=gunTs+32000) _expand(p.rx-cxOff, p.ry-cyOff);
     }
   }
-  // Also include mark positions
-  allRxs.push(rcR.rx-cxOff, pnR.rx-cxOff);
-  allRys.push(rcR.ry-cyOff, pnR.ry-cyOff);
-
-  const fleetMinX=Math.min(...allRxs), fleetMaxX=Math.max(...allRxs);
-  const fleetMinY=Math.min(...allRys), fleetMaxY=Math.max(...allRys);
-  const fleetW=Math.max(fleetMaxX-fleetMinX,lineLen,1);
-  const fleetH=Math.max(fleetMaxY-fleetMinY,lineLen,1);
-
-  // Fit the full trajectory envelope; pull marks close to edges
+  const fleetW=Math.max(maxX-minX, lineLen, 1);
+  const fleetH=Math.max(maxY-minY, lineLen, 1);
   const scaleH=(H-topPad-bottomPad)/fleetH;
   const scaleW=(W-leftPad-rightPad)/fleetW;
   let scale=Math.min(scaleH,scaleW)*0.88;
 
-  // Shift centre to centre of full trajectory bounding box
-  const trajCx=(fleetMinX+fleetMaxX)/2;
-  const trajCy=(fleetMinY+fleetMaxY)/2;
-  // centre now via trajCx/trajCy
+  const trajCx=(minX+maxX)/2;
+  const trajCy=(minY+maxY)/2;
   const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
   const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
   const rx=tX(rcR.rx), ry=tY(rcR.ry), px=tX(pnR.rx), py=tY(pnR.ry);
