@@ -546,6 +546,7 @@ const EVENTS = [
     // Scored Race 2 = telemetry race 3 (gun 17:41 CEST)
     // Telemetry race 1 (15:45) was abandoned — not scored
     knownGuns: [
+      [1, 1778852700000],   // Abandoned R1 — 15:45 CEST (start shown, race not scored)
       [2, 1778856120000],   // Scored R1 — 16:42 CEST
       [3, 1778859660000],   // Scored R2 — 17:41 CEST
     ],
@@ -610,6 +611,10 @@ const TEAM_NAMES = {
 // Keyed by EVENTS index (0 = first day, 1 = second day, etc.)
 // then race number. Values are finishing positions (integers).
 // Use 99 for DNF/DNS/DSQ if needed.
+// Race label map: telemetry raceNum → display label
+// Telemetry race 1 was abandoned; scored races are telemetry 2 & 3
+window.RACE_LABEL_MAP = { 1: 'R1 (ABD)', 2: 'R1', 3: 'R2' };
+
 const OFFICIAL_RESULTS_BY_DAY = {
   // Day 1 (15 May 2026) — scored Race 1 = telemetry race 2, scored Race 2 = telemetry race 3
   1: {
@@ -628,8 +633,8 @@ let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 const GATE_SNS = {
   WW: [28249, 27947],   // windward gate (~1.5km upwind)
   LW: [],
-  RC_SNS: [28320],      // RC boat — fleet-perpendicular auto-detect confirms per race
-  PIN_SN: 28142,        // Pin buoy — SN 27844 co-located backup
+  RC_SNS: [28142],      // RC boat — corrected (SN 27844 co-located backup)
+  PIN_SN: 28320,        // Pin buoy — corrected
 };
 
 // No hardcoded mark positions — auto-detected from telemetry
@@ -1541,15 +1546,31 @@ function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge,bowOffset=true){
   ctx.fillStyle = color;
   ctx.fill();
 
-  // Sail number — sit slightly aft of mast
-  const fontSize = Math.max(6, Math.min(11, L * 0.40));
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${fontSize}px Orbitron`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(label, cx - fx*L*0.08, cy - fy*L*0.08);
-
   ctx.restore();
+
+  // Sail number — drawn OFFSET above the boat so the hull stays visible.
+  // Small leader keeps it associated with its boat in clusters.
+  if(label){
+    const fontSize = Math.max(7, Math.min(10, L * 0.55));
+    const offY = Math.max(13, L*1.5 + 7);  // push label clear of the hull
+    const lx = cx, ly = cy - offY;
+    ctx.save();
+    ctx.font = `bold ${fontSize}px Orbitron`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(label).width;
+    // translucent pill background so label reads over tracks but doesn't block boats
+    ctx.fillStyle = 'rgba(11,15,23,0.66)';
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(lx-tw/2-3, ly-fontSize/2-2, tw+6, fontSize+4, 3); ctx.fill(); }
+    else ctx.fillRect(lx-tw/2-3, ly-fontSize/2-2, tw+6, fontSize+4);
+    // thin leader from label to boat
+    ctx.strokeStyle = color + '88';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(lx, ly+fontSize/2+2); ctx.lineTo(cx, cy-L*0.5); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.fillText(label, lx, ly);
+    ctx.restore();
+  }
 }
 
 function drawSL(ctx,rx,ry,px,py,dim){
@@ -4838,12 +4859,15 @@ function buildRaceTabs(event, di, guns){
   };
   rtRow.appendChild(st);
 
-  // Race tabs
+  // Race tabs — label by scored race number; abandoned races flagged
+  // RACE_LABELS maps telemetry raceNum → display label
+  const RACE_LABELS = (typeof window.RACE_LABEL_MAP !== 'undefined') ? window.RACE_LABEL_MAP : {};
   guns.forEach(([raceNum], ri)=>{
     const rt = document.createElement('div');
     rt.className = 'race-tab';
     rt.id = `raceTab${di}_${raceNum}`;
-    rt.textContent = `R${raceNum}`;
+    rt.textContent = RACE_LABELS[raceNum] || `R${raceNum}`;
+    if(RACE_LABELS[raceNum] && RACE_LABELS[raceNum].includes('ABD')) rt.style.opacity='0.7';
     rt.dataset.race = raceNum;
     rt.onclick = ()=>selectRace(event, di, raceNum, guns, ri);
     rtRow.appendChild(rt);
