@@ -633,8 +633,9 @@ let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 const GATE_SNS = {
   WW: [28249, 27947],   // windward gate (~1.5km upwind)
   LW: [],
-  RC_SNS: [28142],      // RC boat — corrected (SN 27844 co-located backup)
-  PIN_SN: 28320,        // Pin buoy — corrected
+  RC_SNS: [27953],      // RC boat — verified: 0 OCS on this pair for both races
+  PIN_SN: 28320,        // Pin buoy — verified
+  // Note: 28142/27844 are co-located marks at a different position (not the start line)
 };
 
 // No hardcoded mark positions — auto-detected from telemetry
@@ -3617,11 +3618,35 @@ function startReplayLayout(rd,W,H){
   const {rcR,pnR,lineLen,sampleXs,sampleYs}=g;
   const topPad=36, bottomPad=36, leftPad=56, rightPad=56;
   const cxOff=(rcR.rx+pnR.rx)/2, cyOff=(rcR.ry+pnR.ry)/2;
-  const {ySpan,widthSpan}=g;
-  // Fit the FULL fleet: scale to whichever axis is the binding constraint
-  const scaleH=(H-topPad-bottomPad)/Math.max(ySpan,lineLen,1);
-  const scaleW=(W-leftPad-rightPad)/Math.max(widthSpan,lineLen,1);
-  let scale=Math.min(scaleH,scaleW)*0.92;  // 8% margin
+
+  // Collect ALL boat positions across the FULL replay window (not just gun snapshot)
+  // so the viewport never clips boats as the replay plays
+  const allRxs=[], allRys=[];
+  for(const t of Object.values(tracks)){
+    for(const p of t){
+      if(p.ts >= gunTs-90000 && p.ts <= gunTs+31000){
+        const [rx,ry]=latLonToRelXY(p.lat,p.lon,rcR.lat,rcR.lon);
+        allRxs.push(rx-cxOff); allRys.push(ry-cyOff);
+      }
+    }
+  }
+  // Also include mark positions
+  allRxs.push(rcR.rx-cxOff, pnR.rx-cxOff);
+  allRys.push(rcR.ry-cyOff, pnR.ry-cyOff);
+
+  const fleetMinX=Math.min(...allRxs), fleetMaxX=Math.max(...allRxs);
+  const fleetMinY=Math.min(...allRys), fleetMaxY=Math.max(...allRys);
+  const fleetW=Math.max(fleetMaxX-fleetMinX,lineLen,1);
+  const fleetH=Math.max(fleetMaxY-fleetMinY,lineLen,1);
+
+  // Fit the full trajectory envelope; pull marks close to edges
+  const scaleH=(H-topPad-bottomPad)/fleetH;
+  const scaleW=(W-leftPad-rightPad)/fleetW;
+  let scale=Math.min(scaleH,scaleW)*0.88;
+
+  // Shift centre to centre of full trajectory bounding box
+  const trajCx=(fleetMinX+fleetMaxX)/2;
+  const trajCy=(fleetMinY+fleetMaxY)/2;
   const scaledMinX2=Math.min(...sampleXs.map(v=>(v-cxOff)*scale));
   const scaledMaxX2=Math.max(...sampleXs.map(v=>(v-cxOff)*scale));
   const plotCX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
