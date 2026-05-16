@@ -633,9 +633,8 @@ let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
 const GATE_SNS = {
   WW: [28249, 27947],   // windward gate (~1.5km upwind)
   LW: [],
-  RC_SNS: [27953],      // RC boat — verified: 0 OCS on this pair for both races
-  PIN_SN: 28320,        // Pin buoy — verified
-  // Note: 28142/27844 are co-located marks at a different position (not the start line)
+  RC_SNS: [28142],      // RC boat — 3m from committee boat (device 28335); SN 27844 co-located
+  PIN_SN: 28320,        // Pin buoy — 230m from RC end
 };
 
 // No hardcoded mark positions — auto-detected from telemetry
@@ -1474,8 +1473,8 @@ function rotProj(pts,W,H,px,py){
   const cxOff=(Math.min(...allX)+Math.max(...allX))/2;
   const cyOff=(Math.min(...allY)+Math.max(...allY))/2;
   const plotCX=W/2, plotCY=H/2-18;
-  const tX=rx=>plotCX+(rx-cxOff)*scale;
-  const tY=ry=>plotCY-(ry-cyOff)*scale;
+  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
+  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
   return{tX,tY,rcR,pnR,p2};
 }
 
@@ -3391,8 +3390,8 @@ function drawGunR(rd){
   const lineCenterX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
   const plotCX=Math.max(leftPad - scaledMinX2, Math.min(W-rightPad - scaledMaxX2, lineCenterX));
   const plotCY=H/2-6;
-  const tX=rx=>plotCX+(rx-cxOff)*scale;
-  const tY=ry=>plotCY-(ry-cyOff)*scale;
+  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
+  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
 
   // "Forward of the line" = the course side, using the active reach mark when available.
@@ -3647,12 +3646,9 @@ function startReplayLayout(rd,W,H){
   // Shift centre to centre of full trajectory bounding box
   const trajCx=(fleetMinX+fleetMaxX)/2;
   const trajCy=(fleetMinY+fleetMaxY)/2;
-  const scaledMinX2=Math.min(...sampleXs.map(v=>(v-cxOff)*scale));
-  const scaledMaxX2=Math.max(...sampleXs.map(v=>(v-cxOff)*scale));
-  const plotCX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
-  const plotCY=H/2;
-  const tX=rx=>plotCX+(rx-cxOff)*scale;
-  const tY=ry=>plotCY-(ry-cyOff)*scale;
+  // centre now via trajCx/trajCy
+  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
+  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
   const rx=tX(rcR.rx), ry=tY(rcR.ry), px=tX(pnR.rx), py=tY(pnR.ry);
   const slPx=Math.hypot(rx-px, ry-py);
   const mpp=hav(rd.RC.lat,rd.RC.lon,rd.PIN.lat,rd.PIN.lon)/Math.max(slPx,1);
@@ -3776,8 +3772,8 @@ function drawT50R(rd){
   const cxOff=(Math.min(...allX)+Math.max(...allX))/2;
   const cyOff=(Math.min(...allY)+Math.max(...allY))/2;
   const plotCX=W/2, plotCY=H/2-18;
-  const tX=rx=>plotCX+(rx-cxOff)*scale;
-  const tY=ry=>plotCY-(ry-cyOff)*scale;
+  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
+  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
 
   // Draw tracks from gun to T+50 (thin, faded)
