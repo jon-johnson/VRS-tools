@@ -525,7 +525,7 @@ tr:hover td{background:var(--bg3)}
 
 // ── Regatta title (shown in header and PDF) ──────────────────────
 const REGATTA_TITLE    = 'Cape 31 Puntaldia 2026';
-const REGATTA_SUBTITLE = 'Puntaldia, Sardinia · 15 May 2026 · CEST (UTC+2)';
+const REGATTA_SUBTITLE = 'Puntaldia, Sardinia · 15-17 May 2026 · CEST (UTC+2)';
 
 // ── Race days ─────────────────────────────────────────────────────
 // Each entry = one day tab. Same event ID can appear multiple times
@@ -533,6 +533,21 @@ const REGATTA_SUBTITLE = 'Puntaldia, Sardinia · 15 May 2026 · CEST (UTC+2)';
 // Gun timestamps: use https://www.epochconverter.com to convert
 // local race start times to Unix milliseconds.
 const EVENTS = [
+  {
+    id: 'XoD82gqmlIzj8SXFJfFe',
+    division: 'C31',
+    label: 'DAY 3',
+    date: '2026-05-17',
+    tz: 'CEST', tzOffset: 2,
+    raceDay: 3,
+    dayStart: 1778999400000,   // 08:30 CEST
+    dayEnd:   1779033600000,   // 18:00 CEST
+    knownGuns: [
+      [4, 1779004800000],   // R4 10:00 CEST
+      [5, 1779008700000],   // R5 11:05 CEST
+      [6, 1779013620000],   // R6 12:27 CEST
+    ],
+  },
   {
     id: 'XoD82gqmlIzj8SXFJfFe',
     division: 'C31',
@@ -613,7 +628,7 @@ const TEAM_NAMES = {
 // Use 99 for DNF/DNS/DSQ if needed.
 // Race label map: telemetry raceNum → display label
 // Telemetry race 1 was abandoned; scored races are telemetry 2 & 3
-window.RACE_LABEL_MAP = { 1: 'R1 (ABD)', 2: 'R1', 3: 'R2' };
+window.RACE_LABEL_MAP = { 1: 'R1 (ABD)', 2: 'R1', 3: 'R2', 4: 'R1', 5: 'R2', 6: 'R3' };
 
 const OFFICIAL_RESULTS_BY_DAY = {
   // Day 1 (15 May 2026) — scored Race 1 = telemetry race 2, scored Race 2 = telemetry race 3
