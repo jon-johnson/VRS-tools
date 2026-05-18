@@ -392,53 +392,6 @@ tr:hover td{background:var(--bg3)}
 }
 
 </style>
-  <!-- Firestore gun times via REST (no auth required for public regattas) -->
-  <script>
-    const _regatttaCache = {};
-    window._fetchFirestoreGuns = async (regatttaId, dayStart, dayEnd) => {
-      if(!_regatttaCache[regatttaId]) {
-        const url = `https://firestore.googleapis.com/v1/projects/vakaros-racesense/databases/(default)/documents/regattas/${regatttaId}?key=AIzaSyDoQfjoAtx9g3sS7MzKUM0gGwW8tREKxwk`;
-        const res = await fetch(url);
-        if(!res.ok) throw new Error(`Firestore REST ${res.status}`);
-        _regatttaCache[regatttaId] = await res.json();
-      }
-      const doc = _regatttaCache[regatttaId];
-      // Parse Firestore REST format: fields -> arrayValue -> values -> mapValue -> fields
-      const parseValue = (v) => {
-        if(v.stringValue !== undefined) return v.stringValue;
-        if(v.integerValue !== undefined) return parseInt(v.integerValue);
-        if(v.doubleValue !== undefined) return parseFloat(v.doubleValue);
-        if(v.booleanValue !== undefined) return v.booleanValue;
-        if(v.timestampValue !== undefined) return new Date(v.timestampValue).getTime();
-        if(v.nullValue !== undefined) return null;
-        if(v.arrayValue) return (v.arrayValue.values||[]).map(parseValue);
-        if(v.mapValue) {
-          const obj = {};
-          for(const [k,val] of Object.entries(v.mapValue.fields||{})) obj[k] = parseValue(val);
-          return obj;
-        }
-        return null;
-      };
-      const fields = doc.fields;
-      const divisions = parseValue(fields.divisions);
-      const div = divisions?.find(d => d.name === 'C31' || d.boatClass === 'C31' || d.name === 'Cape 31') || divisions?.[0];
-      if(!div?.races) return null;
-      const guns = [];
-      for(const race of div.races) {
-        if(!race.starts?.length) continue;
-        const finishedStart = [...race.starts].reverse().find(s => s.stopReason === 'finished') || race.starts[race.starts.length-1];
-        const ts = finishedStart?.startTime;
-        if(!ts) continue;
-        if(dayStart && dayEnd && (ts < dayStart || ts > dayEnd)) continue;
-        guns.push([race.raceNumber, ts]);
-      }
-      guns.sort((a,b) => a[0]-b[0]);
-      console.log('Firestore guns:', guns.map(g=>`R${g[0]}:${new Date(g[1]).toISOString().slice(11,19)}`).join(', '));
-      return guns;
-    };
-    window._firestoreReady = Promise.resolve();
-    console.log('Firestore REST gun loader ready');
-  </script>
 </head>
 <body>
 
@@ -461,26 +414,37 @@ tr:hover td{background:var(--bg3)}
 
 <!-- Bottom actions -->
 <div class="bottom-actions" id="bottomActions">
-  <div class="bottom-controls">
-    <div class="tws-box">
-      <div class="tws-title">DAY TRUE WIND SPEED</div>
-      <div class="tws-row">
-        <input id="dayTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
-        <button class="action-btn" onclick="saveCurrentDayTwsOverride()">SAVE DAY</button>
-        <button class="action-btn alt" onclick="clearCurrentDayTwsOverride()">CLEAR DAY</button>
+  <div id="settingsPanel" style="display:none;flex-wrap:wrap;gap:12px;justify-content:center;align-items:stretch;width:100%">
+    <div class="bottom-controls">
+      <div class="tws-box">
+        <div class="tws-title">DAY TRUE WIND SPEED</div>
+        <div class="tws-row">
+          <input id="dayTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
+          <button class="action-btn" onclick="saveCurrentDayTwsOverride()">SAVE DAY</button>
+          <button class="action-btn alt" onclick="clearCurrentDayTwsOverride()">CLEAR DAY</button>
+        </div>
+        <div id="dayTwsStateBottom" class="tws-state"></div>
       </div>
-      <div id="dayTwsStateBottom" class="tws-state"></div>
-    </div>
-    <div class="tws-box">
-      <div class="tws-title">RACE TRUE WIND SPEED</div>
-      <div class="tws-row">
-        <input id="raceTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
-        <button class="action-btn" onclick="saveCurrentRaceTwsOverride()">SAVE RACE</button>
-        <button class="action-btn alt" onclick="clearCurrentRaceTwsOverride()">CLEAR RACE</button>
+      <div class="tws-box">
+        <div class="tws-title">RACE TRUE WIND SPEED</div>
+        <div class="tws-row">
+          <input id="raceTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
+          <button class="action-btn" onclick="saveCurrentRaceTwsOverride()">SAVE RACE</button>
+          <button class="action-btn alt" onclick="clearCurrentRaceTwsOverride()">CLEAR RACE</button>
+        </div>
+        <div id="raceTwsStateBottom" class="tws-state"></div>
       </div>
-      <div id="raceTwsStateBottom" class="tws-state"></div>
     </div>
+    <button class="export-btn" id="polarBtn" onclick="showPolarProposal()" style="min-width:210px;
+      font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;
+      background:rgba(0,255,153,.08);border:1px solid rgba(0,255,153,.35);color:#00ff99;
+      padding:6px 14px;border-radius:3px;cursor:pointer;transition:all .15s"
+      onmouseover="this.style.background='rgba(0,255,153,.16)'"
+      onmouseout="this.style.background='rgba(0,255,153,.08)'">
+      POLAR — <span id="polarStatusLabel">BASE</span>
+    </button>
   </div>
+  <button id="settingsToggle" onclick="toggleSettings()" style="font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#94a3b8;padding:6px 14px;border-radius:3px;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">⚙ SETTINGS</button>
   <button class="export-btn" id="exportBtn" onclick="exportPDF()" style="min-width:210px;
   font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;
   background:rgba(0,204,255,.1);border:1px solid rgba(0,204,255,.4);color:#00ccff;
@@ -489,15 +453,6 @@ tr:hover td{background:var(--bg3)}
   onmouseover="this.style.background='rgba(0,204,255,.2)'"
   onmouseout="this.style.background='rgba(0,204,255,.1)'">
   ⬇ PDF — <span id="exportDayLabel"></span>
-</button>
-<button class="export-btn" id="polarBtn" onclick="showPolarProposal()" style="min-width:210px;
-  font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;
-  background:rgba(0,255,153,.08);border:1px solid rgba(0,255,153,.35);color:#00ff99;
-  padding:6px 14px;border-radius:3px;cursor:pointer;
-  transition:all .15s"
-  onmouseover="this.style.background='rgba(0,255,153,.16)'"
-  onmouseout="this.style.background='rgba(0,255,153,.08)'">
-  POLAR — <span id="polarStatusLabel">BASE</span>
 </button>
 </div>
 
@@ -2215,7 +2170,7 @@ async function loadRace(event, raceNum, gunTs, nextGunTs, progressEl){
 
   window.GUN = gunTs; // set global for utility functions
   const BEFORE_GUN = 35000;
-  const AFTER_GUN  = 1200000; // 20 min
+  const AFTER_GUN  = 720000; // 12 min (covers wind inference cap)
   const fetchEnd   = nextGunTs ? Math.min(gunTs + AFTER_GUN, nextGunTs - 1000) : gunTs + AFTER_GUN;
 
   const rows = await fetchAllPages(event.id, gunTs - BEFORE_GUN, fetchEnd);
@@ -3194,7 +3149,7 @@ function renderRacePanel(panelEl, rd){
     if(GUND.length && RC && PIN) drawGunR(rd);
     if(T50.length  && RC && PIN) drawT50R(rd);
     if(RC && PIN) initStartReplayR(rd);
-    if(RC && PIN) drawCourseR(rd); // draw even without WW/LW gates
+    if(RC && PIN) drawCourseR(rd);
     if(l1stats.length) renderL1R(rd);
     drawWindR(rd);
     updateRaceTwsUi(rd);
@@ -4701,6 +4656,15 @@ function renderDaySummary(panelEl, event, races){
 // ══════════════════════════════════════════════════════════════════
 //  NAVIGATION & INIT
 // ══════════════════════════════════════════════════════════════════
+function toggleSettings(){
+  const p = document.getElementById('settingsPanel');
+  const btn = document.getElementById('settingsToggle');
+  const show = p.style.display === 'none';
+  p.style.display = show ? 'flex' : 'none';
+  btn.style.color = show ? '#e2e8f0' : '#94a3b8';
+  btn.style.background = show ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.06)';
+}
+
 function buildUI(){
   const dayTabsEl  = document.getElementById('dayTabs');
   const dayPanelsEl= document.getElementById('dayPanels');

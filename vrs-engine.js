@@ -1,902 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cape 31 · Puntaldia 2026 · Race Report</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<style>
-/* ── BASE ── */
-:root{
-  --bg:#0a0e14;--bg2:#0f1520;--bg3:#141c28;--bg4:#1a2235;
-  --text:#e0e8f0;--muted:#7a9ab0;--muted2:#3a5060;
-  --cyan:#00ccff;--green:#00ff99;--orange:#ff8c00;--red:#ff4466;--yellow:#ffcc00;
-  --purple:#a78bfa;--pink:#f472b6;
-  --good:#00ff99;--warn:#ffcc00;--bad:#ff4466;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;min-height:100vh}
-a{color:var(--cyan);text-decoration:none}
-
-/* ── HEADER ── */
-.hdr{background:var(--bg2);border-bottom:1px solid var(--muted2);padding:12px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
-.hdr-title{font-family:Orbitron,monospace;font-size:15px;font-weight:900;color:var(--cyan);letter-spacing:2px}
-.hdr-sub{color:var(--muted);font-size:11px}
-.hdr-r{margin-left:auto;display:flex;gap:12px;align-items:center;font-size:11px;color:var(--muted)}
-.hi{color:var(--cyan)}
-
-/* ── DAY TABS ── */
-.day-tabs{display:flex;gap:2px;background:var(--bg);padding:8px 20px 0;border-bottom:1px solid var(--muted2)}
-.day-tab{font-family:Orbitron,monospace;font-size:11px;font-weight:700;padding:8px 18px;cursor:pointer;
-  color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;letter-spacing:1px}
-.day-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-.day-tab:hover:not(.active){color:var(--text)}
-.day-tab.loading::after{content:' ⋯';color:var(--yellow)}
-.day-tab.done::after{content:' ✓';color:var(--green);font-size:9px}
-
-/* ── RACE TABS ── */
-.race-tabs{display:flex;gap:2px;background:var(--bg2);padding:6px 20px 0;border-bottom:1px solid var(--muted2);flex-wrap:wrap}
-.race-tab{font-family:Orbitron,monospace;font-size:10px;font-weight:700;padding:6px 14px;cursor:pointer;
-  color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
-.race-tab.active{color:var(--yellow);border-bottom-color:var(--yellow)}
-.race-tab:hover:not(.active){color:var(--text)}
-.race-tab.loaded{color:var(--muted)}
-.race-tab.loaded.active{color:var(--yellow)}
-.race-tab.avg-tab{color:var(--purple)}
-.race-tab.avg-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
-.race-print-header{display:none}
-
-/* ── CONTENT PANELS ── */
-.day-panel{display:none}.day-panel.active{display:block}
-.race-panel{display:none;padding:16px 20px}.race-panel.active{display:block}
-
-/* ── LOADING / STATUS ── */
-.load-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px}
-.load-spinner{width:40px;height:40px;border:3px solid var(--muted2);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.load-msg{font-family:Orbitron,monospace;font-size:12px;color:var(--cyan);letter-spacing:2px}
-.load-sub{color:var(--muted);font-size:11px}
-.err{color:var(--red);font-family:Orbitron,monospace;font-size:11px;padding:20px;text-align:center}
-
-/* ── STRIP (summary bar) ── */
-.strip{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--muted2)}
-.sc{background:var(--bg2);border:1px solid var(--muted2);border-radius:4px;padding:6px 12px;min-width:100px}
-.sv{font-family:Orbitron,monospace;font-size:13px;font-weight:700;color:var(--cyan)}
-.sl{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.5px}
-
-/* ── GEOMETRY BAR ── */
-.gb-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.gb{background:var(--bg2);border:1px solid var(--muted2);border-radius:4px;padding:8px 12px;flex:1;min-width:160px}
-.gb-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px}
-.gb-val{font-family:Orbitron,monospace;font-size:13px;font-weight:700;color:var(--cyan)}
-.gb-sub{font-size:9px;color:var(--muted2);margin-top:2px}
-
-/* ── SECTION HEADERS ── */
-.sh{font-family:Orbitron,monospace;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:2px;
-  padding:6px 0;margin:14px 0 8px;border-bottom:1px solid var(--muted2);text-transform:uppercase}
-
-/* ── MAPS ── */
-.map2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch}
-.mc{background:var(--bg2);border:1px solid var(--muted2);border-radius:6px;overflow:hidden}
-
-.map2>.mc{align-self:stretch}
-
-.replayStartGrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start;margin-bottom:8px}
-.replayStartGrid>.mc{min-width:0}
-.replayStartGrid>*{min-width:0}
-.replayPortraitCard{max-width:none;width:100%;justify-self:stretch}
-.replayCanvasPortrait{display:block;width:100%;max-width:none;aspect-ratio:16/6;margin:0 auto;touch-action:auto}
-.replayControls{display:flex;align-items:center;gap:8px;font-size:8px;flex-wrap:wrap;justify-content:flex-end}
-.replaySpeedGroup{display:flex;align-items:center;gap:4px}
-.replaySpeedBtn{background:#0d1624;border:1px solid #2e4965;color:#9cc5ff;border-radius:6px;padding:3px 7px;font:700 9px Orbitron,sans-serif;cursor:pointer}
-.replaySpeedBtn.active{background:#123763;color:#fff;border-color:#5aa8ff}
-@media (max-width: 980px){.replayStartGrid{grid-template-columns:1fr}.replayPortraitCard{max-width:520px;justify-self:center}}
-.mh{font-family:Orbitron,monospace;font-size:8px;font-weight:700;color:var(--muted);letter-spacing:1px;
-  padding:6px 10px;border-bottom:1px solid var(--muted2);background:var(--bg3)}
-canvas{display:block;width:100%}
-
-/* ── TABLES ── */
-table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}
-.start-table,.reach-table,.official-finish-table{font-size:12px}
-th{font-family:Orbitron,monospace;font-size:8px;font-weight:700;color:var(--muted);letter-spacing:1px;
-  padding:6px 8px;border-bottom:1px solid var(--muted2);text-align:left;background:var(--bg3)}
-td{padding:5px 8px;border-bottom:1px solid var(--bg3)}
-tr:hover td{background:var(--bg3)}
-.td{display:flex;align-items:center;gap:6px}
-.rk{font-family:Orbitron,monospace;font-size:10px;font-weight:700;width:24px;text-align:center}
-.rk.g{color:var(--yellow)}
-.rk.s{color:#aaa}
-.rk.b{color:#c87c3e}
-.sn{font-family:Orbitron,monospace;font-size:11px;font-weight:700}
-.mn{font-family:Orbitron,monospace;font-size:11px}
-.ms{color:var(--muted);font-size:11px}
-.br{display:flex;align-items:center;gap:6px}
-.bb{background:var(--bg3);border-radius:2px;height:8px;width:80px;overflow:hidden;flex-shrink:0}
-.bf{height:100%;border-radius:2px;transition:width .3s}
-.bv{font-size:11px;white-space:nowrap}
-
-/* ── BADGE / RANK ── */
-.badge{display:inline-block;font-family:Orbitron,monospace;font-size:8px;font-weight:700;
-  padding:2px 5px;border-radius:2px;letter-spacing:.5px}
-.badge.pos{background:rgba(0,255,153,.15);color:var(--green);border:1px solid rgba(0,255,153,.3)}
-.badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)}
-.badge.neu{background:rgba(122,154,176,.1);color:var(--muted);border:1px solid var(--muted2)}
-
-/* ── NOTES / CAVEATS ── */
-.notes{background:var(--bg2);border:1px solid var(--muted2);border-radius:6px;padding:12px 14px;
-  font-size:11px;line-height:1.7;color:var(--muted);margin-bottom:12px}
-.notes b{color:var(--text)}
-.caveat{background:rgba(255,204,0,.06);border:1px solid rgba(255,204,0,.2);border-radius:4px;
-  padding:6px 10px;font-size:10px;color:var(--yellow);margin-bottom:8px}
-.nc{background:var(--bg3);border-left:3px solid var(--cyan);padding:8px 12px;margin-bottom:8px;font-size:11px;line-height:1.6}
-.nt{font-family:Orbitron,monospace;font-size:9px;font-weight:700;color:var(--cyan);margin-bottom:4px;letter-spacing:1px}
-.nb{color:var(--muted)}
-.good{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}
-
-/* ── DAY SUMMARY ── */
-.day-summary{padding:16px 20px}
-.ds-section{margin-bottom:24px}
-.ds-title{font-family:Orbitron,monospace;font-size:11px;font-weight:700;color:var(--cyan);
-  letter-spacing:2px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--muted2)}
-.race-grid{display:grid;gap:4px;margin-bottom:16px}
-.rg-head{display:flex;gap:0;font-family:Orbitron,monospace;font-size:9px;color:var(--muted);letter-spacing:.5px}
-.rg-boat{width:48px;flex-shrink:0;padding:4px 6px}
-.rg-cell{flex:1;min-width:32px;text-align:center;padding:4px 2px;font-size:10px}
-.rg-row{display:flex;gap:0;border-bottom:1px solid var(--bg3)}
-.rg-row:hover{background:var(--bg2)}
-.pos1{background:rgba(255,204,0,.2);color:var(--yellow);font-weight:700;border-radius:2px}
-.pos2{background:rgba(200,200,200,.12);color:#ccc}
-.pos3{background:rgba(200,124,62,.15);color:#c87c3e}
-
-/* ── DAY HIGHLIGHTS STRIP ── */
-.ds-highlights{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.ds-hl{background:var(--bg2);border:1px solid var(--muted2);border-radius:6px;padding:10px 16px;flex:1;min-width:130px}
-.ds-hl-val{font-family:Orbitron,monospace;font-size:18px;font-weight:900;color:var(--cyan);line-height:1}
-.ds-hl-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:4px}
-
-/* ── SLOPE CHART ── */
-.ds-slope-wrap{margin-bottom:20px;background:var(--bg2);border:1px solid var(--muted2);border-radius:6px;padding:12px 16px}
-.ds-slope-title{font-family:Orbitron,monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:8px}
-
-/* ── SORTABLE AVERAGES TABLE ── */
-.ds-avg-table{width:100%;border-collapse:collapse;font-size:12px}
-.ds-avg-table th{font-family:Orbitron,monospace;font-size:8px;color:var(--muted);letter-spacing:.5px;
-  padding:6px 8px;border-bottom:2px solid var(--muted2);text-align:left;cursor:pointer;user-select:none;
-  white-space:nowrap;background:var(--bg2)}
-.ds-avg-table th:hover{color:var(--cyan)}
-.ds-avg-table th.sort-asc::after{content:' ↑';color:var(--cyan)}
-.ds-avg-table th.sort-desc::after{content:' ↓';color:var(--cyan)}
-.ds-avg-table td{padding:6px 8px;border-bottom:1px solid var(--bg3);vertical-align:middle}
-.ds-avg-table tr:hover td{background:var(--bg3)}
-.ds-avg-table .cell-boat{display:flex;align-items:center;gap:8px}
-.ds-avg-table .boat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.ds-avg-table .boat-name{font-family:Orbitron,monospace;font-size:10px;font-weight:700}
-.ds-avg-table .boat-team{font-size:9px;color:var(--muted);margin-top:1px}
-.ds-fin-1{background:rgba(255,204,0,.12);color:var(--yellow);font-family:Orbitron,monospace;font-size:11px;
-  font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid rgba(255,204,0,.25)}
-.ds-fin-2{background:rgba(200,200,200,.08);color:#bbb;font-family:Orbitron,monospace;font-size:11px;
-  font-weight:700;padding:2px 6px;border-radius:3px}
-.ds-fin-3{background:rgba(200,124,62,.12);color:#c87c3e;font-family:Orbitron,monospace;font-size:11px;
-  font-weight:700;padding:2px 6px;border-radius:3px}
-.ds-fin-n{font-family:Orbitron,monospace;font-size:11px;color:var(--muted)}
-.ds-delta-pos{color:var(--green);font-family:Orbitron,monospace;font-size:11px;font-weight:700}
-.ds-delta-neg{color:var(--red);font-family:Orbitron,monospace;font-size:11px;font-weight:700}
-.ds-delta-neu{color:var(--muted);font-family:Orbitron,monospace;font-size:11px}
-.ds-ocs-warn{background:rgba(255,68,102,.15);color:var(--red);font-family:Orbitron,monospace;
-  font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid rgba(255,68,102,.3)}
-.ds-ocs-none{color:var(--muted2);font-size:11px}
-.ds-mono{font-family:'Share Tech Mono',monospace;font-size:11px}
-.ds-rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 5px;
-  margin-left:6px;border-radius:999px;font-family:Orbitron,monospace;font-size:8px;font-weight:700;letter-spacing:.3px;
-  border:1px solid var(--muted2);background:rgba(122,154,176,.08);color:var(--muted)}
-.ds-rank-1{background:rgba(255,204,0,.14);color:var(--yellow);border-color:rgba(255,204,0,.35)}
-.ds-rank-2{background:rgba(210,210,210,.10);color:#d6d6d6;border-color:rgba(210,210,210,.30)}
-.ds-rank-3{background:rgba(200,124,62,.14);color:#c87c3e;border-color:rgba(200,124,62,.35)}
-.ds-rank-wrap{display:inline-flex;align-items:center;justify-content:center;gap:4px}
-
-/* ── SPARKLINE ── */
-.spark-wrap{display:flex;align-items:center;gap:4px}
-.spark{display:inline-flex;align-items:flex-end;gap:1px;height:20px}
-.spark-bar{width:6px;background:var(--cyan);border-radius:1px 1px 0 0;opacity:.7;transition:height .3s}
-.course-card,.wind-card{display:none!important}
-
-/* ── WIND CANVAS ── */
-#cWindDay{display:block;width:100%;height:120px}
-
-.bottom-actions{display:flex;gap:12px;justify-content:center;align-items:stretch;flex-wrap:wrap;padding:14px 20px 20px;border-top:1px solid var(--muted2);margin-top:8px;background:var(--bg2)}
-.bottom-controls{display:grid;grid-template-columns:repeat(2,minmax(260px,320px));gap:12px;align-items:stretch;justify-content:center}
-.tws-box{background:var(--bg3);border:1px solid var(--muted2);border-radius:6px;padding:10px 12px;min-width:0;width:100%}
-.tws-title{font:700 9px Orbitron,monospace;color:var(--muted);letter-spacing:.8px;margin-bottom:6px}
-.tws-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.tws-input{width:90px;background:#0f1822;border:1px solid #263647;color:#e9f1fa;border-radius:6px;padding:6px 8px;font:600 11px Orbitron,sans-serif}
-.action-btn{font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;background:rgba(0,204,255,.1);border:1px solid rgba(0,204,255,.4);color:#00ccff;padding:6px 10px;border-radius:6px;cursor:pointer}
-.action-btn.alt{background:rgba(122,154,176,.08);border-color:rgba(122,154,176,.35);color:var(--muted)}
-.tws-state{font-size:10px;color:var(--muted2)}
-.course-card{grid-column:1;grid-row:1}
-.official-card{grid-column:2;grid-row:1}
-.wind-card{grid-column:3;grid-row:1}
-
-/* ── RESPONSIVE ── */
-@media(max-width:700px){
-  .map2{grid-template-columns:1fr}
-  .race-tabs{gap:1px}
-  .race-tab{padding:5px 8px;font-size:9px}
-}
-
-@media(max-width:900px){
-  body{font-size:13px}
-  .hdr{padding:10px 12px;flex-wrap:wrap;gap:10px}
-  .hdr-title{font-size:14px;letter-spacing:1px}
-  .hdr-sub{font-size:10px}
-  .hdr-r{margin-left:0;width:100%;justify-content:space-between;font-size:10px}
-  .day-tabs,.race-tabs{padding-left:10px;padding-right:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}
-  .day-tabs{flex-wrap:nowrap}
-  .race-tabs{flex-wrap:nowrap}
-  .day-tab,.race-tab{flex:0 0 auto}
-  .day-tab{padding:9px 12px;font-size:10px}
-  .race-tab{padding:8px 10px;font-size:9px}
-
-  .race-panel{padding:12px 10px}
-  .strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
-  .sc{min-width:0;width:100%;padding:8px 10px}
-  .sv{font-size:14px}
-  .sl{font-size:10px}
-
-  .gb-row{gap:8px}
-  .gb{min-width:0;padding:10px}
-  .gb-val{font-size:14px}
-  .gb-lbl,.gb-sub{font-size:10px}
-
-  .sh{font-size:10px;margin:12px 0 8px}
-  .mh{font-size:9px;padding:8px 10px}
-
-  th,td{padding:6px 8px}
-
-  .replayStartGrid{grid-template-columns:1fr}
-  .replayPortraitCard{max-width:none;width:100%;justify-self:stretch}
-  .replayCanvasPortrait{max-width:none;width:100%}
-  .replayDataCol{min-width:0;width:100%;max-width:none;justify-self:stretch}
-  .replayControls{justify-content:flex-start;width:100%}
-  .replayControls input[type="range"]{width:100% !important;min-width:0}
-
-  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;border:1px solid var(--muted2);border-radius:6px}
-  .table-scroll table{min-width:680px;margin-bottom:0;border-collapse:collapse;width:100%}
-
-  .map2{grid-template-columns:1fr;gap:10px}
-  .course-and-right{display:flex !important;flex-direction:column;gap:8px !important}
-  .course-card{order:2}
-  .official-card{order:1}
-  .wind-card{order:3}
-
-
-  .race-panel > *,
-  .race-panel .mc,
-  .race-panel .nc,
-  .race-panel .table-scroll,
-  .course-and-right > div,
-  .map2,
-  .replayStartGrid,
-  .course-and-right{width:100%;max-width:100%}
-
-  .map2 > .mc,
-  .replayStartGrid > .mc,
-  .course-and-right > div,
-  .course-and-right .mc{min-width:0;max-width:none;justify-self:stretch}
-
-  .bottom-actions{justify-content:center;align-items:stretch}
-  .bottom-controls{display:grid;grid-template-columns:1fr;width:100%}
-  .tws-box{min-width:0;width:100%}
-  .tws-row .action-btn{flex:1 1 auto;text-align:center}
-  .ds-avg-table{font-size:11px}
-  .ds-avg-table th{font-size:9px}
-  .ds-avg-table .boat-name{font-size:11px}
-  .ds-avg-table .boat-team{font-size:9px}
-}
-
-@media(max-width:560px){
-  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .replayControls{justify-content:flex-start;font-size:9px}
-  #cWindDay{height:180px}
-  .bottom-actions{padding:10px;flex-direction:column}
-  .bottom-actions .export-btn{width:100%;padding:10px 12px !important;font-size:11px !important}
-  .tws-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  .tws-row .tws-input{grid-column:1 / -1;width:100%}
-}
-
-/* ── PRINT / PDF EXPORT ── */
-@media print {
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { background: #0a0e14 !important; color: #e0e8f0 !important; font-size: 10px; margin:0; padding:0; }
-  .hdr { position: static; border-bottom: 1px solid #3a5060; margin-bottom: 6px; padding: 6px 12px; }
-  .hdr-title { font-size: 12px !important; }
-  .day-tabs, .race-tabs, .export-btn { display: none !important; }
-
-  /* Only show current day — panels not in current day are hidden */
-  .day-panel { display: none !important; }
-  .day-panel.active { display: block !important; }
-  .race-panel { display: none; padding: 8px 12px; }
-  .race-panel.print-show { display: block !important; }
-  .race-panel:empty { display: none !important; }
-  .day-summary { display: none !important; }
-  .day-summary.print-show-summary { display: block !important; }
-
-  /* Each race starts on a new page */
-  .race-panel.print-show { page-break-before: always; }
-  .race-panel.print-show:first-of-type { page-break-before: auto; }
-  .race-print-header { display: block !important; font-family: Orbitron, monospace; font-size: 11px;
-    color: #00ccff; letter-spacing: 2px; margin-bottom: 6px; border-bottom: 1px solid #00ccff44; padding-bottom: 4px; }
-
-  /* Strip (summary bar) — compact horizontal */
-  .strip { flex-wrap: nowrap; gap: 4px; padding: 5px 0; margin-bottom: 6px; overflow: hidden; }
-  .sc { min-width: 70px; padding: 4px 7px; }
-  .sv { font-size: 11px !important; }
-  .sl { font-size: 7px !important; }
-
-  /* Geometry bar */
-  .gb { padding: 5px 8px; min-width: 120px; }
-  .gb-val { font-size: 11px !important; }
-  .gb-lbl, .gb-sub { font-size: 7px !important; }
-  .gb-row { margin-bottom: 6px; }
-
-  /* Section headers */
-  .sh { margin: 8px 0 4px; font-size: 8px; }
-
-  /* TWO-COLUMN layout for start maps to save vertical space */
-  .map2 { grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; align-items: stretch; }
-  .mh { font-size: 7px !important; padding: 4px 7px; }
-
-  /* Canvas: scale to fit without distortion */
-  canvas { max-width: 100% !important; height: auto !important; display: block; }
-
-  /* Page 2 starts at LEG 1 header (after start table) */
-  .page2-start { page-break-before: always !important; break-before: always !important; }
-
-  /* Course + right panel: two-column grid */
-  .course-and-right {
-    display: grid !important;
-    grid-template-columns: 52% 44% !important;
-    gap: 10px !important;
-    margin-bottom: 6px !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-  .course-and-right .mc { width: auto !important; }
-
-  /* Tables: compact */
-  table { margin-bottom: 4px; font-size: 9px; }
-  th { font-size: 7px !important; padding: 3px 4px !important; background: #141c28 !important; }
-  td { padding: 2px 4px !important; }
-  tr:nth-child(even) td { background: #0f1520 !important; }
-  table { page-break-inside: avoid; }
-
-  /* Wind canvas — tall enough for legend (4 rows × ~16px + arrow + padding) */
-  [id$="cWind"] { height: 240px !important; }
-
-  /* Places gained canvas */
-  [id$="cDelta"] { height: 100px !important; }
-
-  /* Start maps */
-  [id$="cGun"], [id$="cT50"] { max-height: none !important; }
-
-  /* Day summary — only shown when explicitly included in PDF export */
-  .day-summary.print-show-summary { display: block !important; page-break-after: always; padding: 8px 12px; }
-
-  /* Notes/caveats */
-  .notes, .caveat, .nc { font-size: 9px !important; padding: 5px 8px; margin-bottom: 5px; }
-  .nc { padding: 5px 8px; }
-}
-
-@page {
-  size: A4 portrait;
-  margin: 8mm 8mm;
-}
-
-</style>
-</head>
-<body>
-
-<div class="hdr">
-  <div>
-    <div class="hdr-title" id="regattatitle">M32 · REGATTA REPORT</div>
-    <div class="hdr-sub" id="regattasub">Vakaros RaceSense telemetry analysis</div>
-  </div>
-<div class="hdr-r">
-    <span id="hdrFleet">—</span>
-    <span id="hdrDays" class="hi">—</span>
-  </div>
-</div>
-
-<!-- Day tabs -->
-<div class="day-tabs" id="dayTabs"></div>
-
-<!-- Day panels (generated dynamically) -->
-<div id="dayPanels"></div>
-
-<!-- Bottom actions -->
-<div class="bottom-actions" id="bottomActions">
-  <div id="settingsPanel" style="display:none;flex-wrap:wrap;gap:12px;justify-content:center;align-items:stretch;width:100%">
-    <div class="bottom-controls">
-      <div class="tws-box">
-        <div class="tws-title">DAY TRUE WIND SPEED</div>
-        <div class="tws-row">
-          <input id="dayTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
-          <button class="action-btn" onclick="saveCurrentDayTwsOverride()">SAVE DAY</button>
-          <button class="action-btn alt" onclick="clearCurrentDayTwsOverride()">CLEAR DAY</button>
-        </div>
-        <div id="dayTwsStateBottom" class="tws-state"></div>
-      </div>
-      <div class="tws-box">
-        <div class="tws-title">RACE TRUE WIND SPEED</div>
-        <div class="tws-row">
-          <input id="raceTwsInputBottom" class="tws-input" type="number" min="1" step="0.1" placeholder="kt">
-          <button class="action-btn" onclick="saveCurrentRaceTwsOverride()">SAVE RACE</button>
-          <button class="action-btn alt" onclick="clearCurrentRaceTwsOverride()">CLEAR RACE</button>
-        </div>
-        <div id="raceTwsStateBottom" class="tws-state"></div>
-      </div>
-    </div>
-    <button class="export-btn" id="polarBtn" onclick="showPolarProposal()" style="min-width:210px;
-      font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;
-      background:rgba(0,255,153,.08);border:1px solid rgba(0,255,153,.35);color:#00ff99;
-      padding:6px 14px;border-radius:3px;cursor:pointer;transition:all .15s"
-      onmouseover="this.style.background='rgba(0,255,153,.16)'"
-      onmouseout="this.style.background='rgba(0,255,153,.08)'">
-      POLAR — <span id="polarStatusLabel">BASE</span>
-    </button>
-  </div>
-  <button id="settingsToggle" onclick="toggleSettings()" style="font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#94a3b8;padding:6px 14px;border-radius:3px;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">⚙ SETTINGS</button>
-  <button class="export-btn" id="exportBtn" onclick="exportPDF()" style="min-width:210px;
-  font-family:Orbitron,monospace;font-size:9px;font-weight:700;letter-spacing:1px;
-  background:rgba(0,204,255,.1);border:1px solid rgba(0,204,255,.4);color:#00ccff;
-  padding:6px 14px;border-radius:3px;cursor:pointer;
-  transition:all .15s"
-  onmouseover="this.style.background='rgba(0,204,255,.2)'"
-  onmouseout="this.style.background='rgba(0,204,255,.1)'">
-  ⬇ PDF — <span id="exportDayLabel"></span>
-</button>
-</div>
-
-
-<script>
-'use strict';
-// ╔══════════════════════════════════════════════════════════════════╗
-// ║              ⚙️  REGATTA CONFIGURATION — EDIT THIS SECTION       ║
-// ╠══════════════════════════════════════════════════════════════════╣
-// ║  To create a new report:                                         ║
-// ║  1. Set REGATTA_TITLE and REGATTA_SUBTITLE below                 ║
-// ║  2. Add one entry per race DAY to EVENTS[]                       ║
-// ║     - id: Vakaros event ID from the URL                          ║
-// ║     - label: short day label shown in tab e.g. 'FEB 6'           ║
-// ║     - date: ISO date string 'YYYY-MM-DD'                         ║
-// ║     - tzOffset: hours from UTC e.g. -5 for EST                   ║
-// ║     - raceDay: race-day number for Vakaros URL param             ║
-// ║     - dayStart/dayEnd: broad Unix ms timestamps bracketing day   ║
-// ║     - knownGuns: [[raceNum, gunTimestampMs], ...]                ║
-// ║  3. Update FLEET CONFIG (colours, names, exclusions)             ║
-// ║  4. Add official results per day to OFFICIAL_RESULTS_BY_DAY      ║
-// ║  5. Update GATE_SNS with mark serial numbers for the venue       ║
-// ╚══════════════════════════════════════════════════════════════════╝
-
-// ── Regatta title (shown in header and PDF) ──────────────────────
-const REGATTA_TITLE    = 'Cape 31 Puntaldia 2026';
-const REGATTA_SUBTITLE = 'Puntaldia, Sardinia · 15-17 May 2026 · CEST (UTC+2)';
-
-// ── Race days ─────────────────────────────────────────────────────
-// Each entry = one day tab. Same event ID can appear multiple times
-// with different raceDay values (Vakaros uses race-day=N param).
-// Gun timestamps: use https://www.epochconverter.com to convert
-// local race start times to Unix milliseconds.
-const EVENTS = [
-  {
-    id: 'XoD82gqmlIzj8SXFJfFe',
-    division: 'C31',
-    label: 'DAY 3',
-    date: '2026-05-17',
-    tz: 'CEST', tzOffset: 2,
-    raceDay: 3,
-    dayStart: 1778999400000,   // 08:30 CEST
-    dayEnd:   1779033600000,   // 18:00 CEST
-    knownGuns: [
-      [4, 1779004800000],   // R4 10:00 CEST
-      [5, 1779008700000],   // R5 11:05 CEST
-      [6, 1779013620000],   // R6 12:27 CEST
-    ],
-  },
-  {
-    id: 'XoD82gqmlIzj8SXFJfFe',
-    division: 'C31',
-    label: 'DAY 1',
-    date: '2026-05-15',
-    tz: 'CEST', tzOffset: 2,
-    raceDay: 1,
-    dayStart: 1778853600000,   // ~15:40 CEST
-    dayEnd:   1778866800000,   // ~19:00 CEST
-    // Scored Race 1 = telemetry race 2 (gun 16:42 CEST)
-    // Scored Race 2 = telemetry race 3 (gun 17:41 CEST)
-    // Telemetry race 1 (15:45) was abandoned — not scored
-    knownGuns: [
-      [1, 1778852700000],   // Abandoned R1 — 15:45 CEST (start shown, race not scored)
-      [2, 1778856120000],   // Scored R1 — 16:42 CEST
-      [3, 1778859660000],   // Scored R2 — 17:41 CEST
-    ],
-  },
-];
-
-// Helper: get marks SNs for a specific event, falling back to global GATE_SNS
-function getGateSNs(event){
-  if(event && event.markSNs){
-    return {
-      RC_SNS: event.markSNs.RC_SNS || GATE_SNS.RC_SNS,
-      PIN_SN: event.markSNs.PIN_SN ?? GATE_SNS.PIN_SN,
-      WW: event.markSNs.WW || GATE_SNS.WW,
-      LW: event.markSNs.LW || GATE_SNS.LW,
-    };
-  }
-  return GATE_SNS;
-}
-
-// ── Fleet config ──────────────────────────────────────────────────
-// EXCLUDED_BOATS: sail numbers to ignore (RC boat, bow boat, chase boat)
-const EXCLUDED_BOATS = ['001'];  // 001 = RC committee boat
-const BOATS_ALL = ["IOM 31", "GBR-3169", "TUR3150", "GER3138", "ITA3176", "HUN 63", "GBR 082", "NED 67", "AUT 3165", "GER3156", "GER42", "ITA3115", "NED 3138", "POR25682"];
-
-// Boat colours — one per competing sail number
-const COL = {
-  'IOM 31':    '#22c55e',
-  'GBR-3169':  '#22c55e',
-  'TUR3150':   '#ff4444',
-  'GER3138':   '#22c55e',
-  'ITA3176':   '#22c55e',
-  'HUN 63':    '#22c55e',
-  'GBR 082':   '#22c55e',
-  'NED 67':    '#22c55e',
-  'AUT 3165':  '#22c55e',
-  'GER3156':   '#22c55e',
-  'GER42':     '#22c55e',
-  'ITA3115':   '#22c55e',
-  'NED 3138':  '#22c55e',
-  'POR25682':  '#22c55e',
-};
-
-// Team names — sail number → team name (shown in tables and PDF)
-const TEAM_NAMES = {
-  'IOM 31':    'Shotgunn',
-  'GBR-3169':  'Black Seal 2',
-  'TUR3150':   'Eker Süzme',
-  'GER3138':   'Hatari',
-  'ITA3176':   'Stig',
-  'HUN 63':    'Black Battalion',
-  'GBR 082':   'Django',
-  'NED 67':    'K-Force jr',
-  'AUT 3165':  'Stella Maris',
-  'GER3156':   'La Pericolosa',
-  'GER42':     'Black Pearl',
-  'ITA3115':   'Squirt',
-  'NED 3138':  'Motions',
-  'POR25682':  'Firstings',
-};
-
-// ── Official results ──────────────────────────────────────────────
-// Keyed by EVENTS index (0 = first day, 1 = second day, etc.)
-// then race number. Values are finishing positions (integers).
-// Use 99 for DNF/DNS/DSQ if needed.
-// Race label map: telemetry raceNum → display label
-// Telemetry race 1 was abandoned; scored races are telemetry 2 & 3
-window.RACE_LABEL_MAP = { 1: 'R1 (ABD)', 2: 'R1', 3: 'R2', 4: 'R1', 5: 'R2', 6: 'R3' };
-
-const OFFICIAL_RESULTS_BY_DAY = {
-  // Day 1 (15 May) — site R1=tele 2, site R2=tele 3
-  1: {
-    2: {"IOM 31":5,"GBR-3169":4,"TUR3150":8,"GER3138":2,"ITA3176":1,"HUN 63":6,"GBR 082":11,"NED 67":9,"AUT 3165":7,"GER3156":3,"GER42":10,"ITA3115":12,"NED 3138":14,"POR25682":13},
-    3: {"IOM 31":3,"GBR-3169":4,"TUR3150":1,"GER3138":7,"ITA3176":10,"HUN 63":5,"GBR 082":2,"NED 67":6,"AUT 3165":8,"GER3156":13,"GER42":9,"ITA3115":12,"NED 3138":11,"POR25682":14},
-  },
-  // Day 3 (17 May) — site R3=tele 4, site R4=tele 5, site R5=tele 6
-  3: {
-    4: {"IOM 31":7,"GBR-3169":3,"TUR3150":4,"GER3138":1,"ITA3176":2,"HUN 63":6,"GBR 082":11,"NED 67":12,"AUT 3165":5,"GER3156":9,"GER42":13,"ITA3115":14,"NED 3138":10,"POR25682":8},
-    5: {"IOM 31":10,"GBR-3169":3,"TUR3150":11,"GER3138":1,"ITA3176":7,"HUN 63":2,"GBR 082":4,"NED 67":6,"AUT 3165":12,"GER3156":5,"GER42":8,"ITA3115":14,"NED 3138":13,"POR25682":9},
-    6: {"IOM 31":2,"GBR-3169":12,"TUR3150":1,"GER3138":5,"ITA3176":8,"HUN 63":3,"GBR 082":7,"NED 67":9,"AUT 3165":4,"GER3156":6,"GER42":14,"ITA3115":13,"NED 3138":10,"POR25682":11},
-  },
-};
-// Internal — do not edit
-let OFFICIAL_RESULTS = OFFICIAL_RESULTS_BY_DAY[0] || {};
-
-// ── Mark serial numbers ───────────────────────────────────────────
-// Serial numbers of the Vakaros mark buoys at this venue.
-// Find these in raw telemetry: marks with role='mark' near gun time.
-// WW = windward gate buoys, LW = leeward gate buoys
-// RC_SNS = RC boat(s), PIN_SN = pin end buoy
-const GATE_SNS = {
-  WW: [28249, 27947],   // windward gate (~1.5km upwind)
-  LW: [],
-  RC_SNS: [28142],      // RC boat — 3m from committee boat (device 28335); SN 27844 co-located
-  PIN_SN: 28320,        // Pin buoy — 230m from RC end
-};
-
-// No hardcoded mark positions — auto-detected from telemetry
-// ╔══════════════════════════════════════════════════════════════════╗
-// ║              END OF CONFIGURATION                                ║
-// ╚══════════════════════════════════════════════════════════════════╝
-
-// Physics constants
-const D2R = Math.PI/180;
-const RE  = 6371000;
-const BOAT_LOA = 9.45;  // Cape 31 length overall (m)
-const BOAT_BEAM = 2.99; // Cape 31 beam (m)
-const BOAT_CLASS = 'cape31';
-// ── CAPE 31 POLAR (TWS → TWA → boatspeed kts) — approximate ─────────────────
-const BOAT_POLAR = {"6":{"40":3.8,"45":4.3,"50":4.6,"52":4.7,"60":4.5,"75":4.2,"90":4.0,"110":4.2,"130":4.6,"150":4.3,"170":3.8},"8":{"40":4.5,"45":5.1,"50":5.5,"52":5.6,"60":5.4,"75":5.1,"90":4.9,"110":5.3,"130":5.8,"150":5.5,"170":4.7},"10":{"40":5.0,"45":5.7,"50":6.1,"52":6.3,"60":6.1,"75":5.8,"90":5.6,"110":6.0,"130":6.5,"150":6.1,"170":5.2},"12":{"40":5.3,"45":6.1,"50":6.6,"52":6.8,"60":6.7,"75":6.4,"90":6.2,"110":6.6,"130":7.1,"150":6.7,"170":5.6},"14":{"40":5.5,"45":6.4,"50":7.0,"52":7.2,"60":7.2,"75":6.9,"90":6.7,"110":7.1,"130":7.6,"150":7.2,"170":6.0},"16":{"40":5.6,"45":6.6,"50":7.3,"52":7.5,"60":7.6,"75":7.3,"90":7.1,"110":7.5,"130":8.0,"150":7.6,"170":6.3},"20":{"40":5.7,"45":6.8,"50":7.6,"52":7.9,"60":8.1,"75":7.8,"90":7.6,"110":8.0,"130":8.5,"150":8.1,"170":6.7}};
-const BOAT_POLAR_TWS = [6, 8, 10, 12, 14, 16, 18, 20, 22];
-const BOAT_POLAR_TWA_MIN = 50;
-const BOAT_POLAR_TWA_MAX = 150;
-
-
-function clonePolar(src){ return JSON.parse(JSON.stringify(src)); }
-const POLAR_STORE_PREFIX = 'm32_polar_store_v1';
-const POLAR_OBS_KEY = `${POLAR_STORE_PREFIX}_observations`;
-const POLAR_CANDIDATE_KEY = `${POLAR_STORE_PREFIX}_candidate`;
-const POLAR_ACTIVE_KEY = `${POLAR_STORE_PREFIX}_active`;
-const POLAR_TWS_OVERRIDE_KEY = `${POLAR_STORE_PREFIX}_tws_overrides`;
-function safeLocalGet(key){ try{return JSON.parse(localStorage.getItem(key)||'null');}catch(e){return null;} }
-function safeLocalSet(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ console.warn('localStorage set failed', key, e); } }
-function getActivePolarStore(){ return safeLocalGet(POLAR_ACTIVE_KEY); }
-function getCandidatePolarStore(){ return safeLocalGet(POLAR_CANDIDATE_KEY); }
-function getPolarObsStore(){ return safeLocalGet(POLAR_OBS_KEY) || {className:BOAT_CLASS, version:1, observations:{}}; }
-function getPolarGrid(){ return (getActivePolarStore()?.polar) || BOAT_POLAR; }
-function getTwsOverrideStore(){ return safeLocalGet(POLAR_TWS_OVERRIDE_KEY) || {days:{}, races:{}}; }
-function dayOverrideKeyFromEvent(event, di){ return `${event?.id||'ev'}_d${di ?? event?._dayIdx ?? 0}`; }
-function raceOverrideKeyFromRd(rd){ return `${rd?.event?.id||'ev'}_d${rd?.event?._dayIdx ?? rd?._dayIdx ?? 0}_r${rd?.raceNum ?? 0}`; }
-function getEffectiveTwsInfo(rd){
-  const store=getTwsOverrideStore();
-  const raceKey=raceOverrideKeyFromRd(rd);
-  const dayKey=dayOverrideKeyFromEvent(rd?.event, rd?.event?._dayIdx ?? rd?._dayIdx ?? 0);
-  const r=store.races?.[raceKey]?.tws;
-  if(Number.isFinite(r)) return {tws:+r, source:'race'};
-  const d=store.days?.[dayKey]?.tws;
-  if(Number.isFinite(d)) return {tws:+d, source:'day'};
-  return {tws:null, source:'none'};
-}
-function clearPolarObsForPredicate(pred){
-  const store=getPolarObsStore(); const obs=store.observations||{};
-  for(const [k,v] of Object.entries(obs)){ if(pred(v)) delete obs[k]; }
-  store.updatedAt=Date.now();
-  safeLocalSet(POLAR_OBS_KEY, store);
-}
-function refreshPolarDataForRace(rd){
-  if(!rd) return;
-  const di = rd.event?._dayIdx ?? rd._dayIdx ?? 0;
-  clearPolarObsForPredicate(o => String(o.eventId||'')===String(rd.event?.id||'') && +o.dayIdx===+di && +o.raceNum===+rd.raceNum);
-  try{ collectPolarObservationsFromRace(rd); }catch(e){ console.warn('polar obs refresh failed', e); }
-}
-function refreshPolarDataForDay(event, di){
-  clearPolarObsForPredicate(o => String(o.eventId||'')===String(event?.id||'') && +o.dayIdx===+di);
-  for(const rd of (event?._races||[])){ if(rd) refreshPolarDataForRace(rd); }
-}
-function updateRaceTwsUi(rd){
-  if(!rd) return;
-  const info=getEffectiveTwsInfo(rd);
-  const id=raceDomId(rd,'twsState');
-  const el=document.getElementById('raceTwsStateBottom') || document.getElementById(id);
-  if(el) el.textContent = info.tws!=null ? `Using ${info.tws.toFixed(1)} kt (${info.source} override)` : 'No race override · day/base values apply';
-  const inp=document.getElementById('raceTwsInputBottom') || document.getElementById(raceDomId(rd,'twsInput'));
-  if(inp && document.activeElement!==inp){ inp.value = info.source==='race' && info.tws!=null ? info.tws : ''; }
-}
-function rerenderVisibleRace(rd){
-  if(!rd) return;
-  const panelEl=document.getElementById(`racePanel${rd._dayIdx}_${rd.raceNum}`);
-  if(panelEl && panelEl.offsetParent!==null){
-    try{ renderRacePanel(panelEl, rd); }catch(e){ console.warn('rerenderVisibleRace failed', e); }
-  }
-}
-function updateDayTwsUi(di){
-  const event=EVENTS?.[di]; if(!event) return;
-  const store=getTwsOverrideStore();
-  const dayKey=dayOverrideKeyFromEvent(event, di);
-  const v=store.days?.[dayKey]?.tws;
-  const inp=document.getElementById('dayTwsInputBottom') || document.getElementById(`dayTwsInput${di}`);
-  if(inp && document.activeElement!==inp){ inp.value = Number.isFinite(v) ? v : ''; }
-  const st=document.getElementById('dayTwsStateBottom') || document.getElementById(`dayTwsState${di}`);
-  if(st) st.textContent = Number.isFinite(v) ? `Day override active: ${(+v).toFixed(1)} kt` : 'No day override';
-}
-function saveDayTwsOverride(di){
-  const event=EVENTS?.[di]; if(!event) return;
-  const inp=document.getElementById('dayTwsInputBottom') || document.getElementById(`dayTwsInput${di}`);
-  const raw=inp ? inp.value.trim() : '';
-  const store=getTwsOverrideStore();
-  const dayKey=dayOverrideKeyFromEvent(event, di);
-  if(raw===''){ delete store.days[dayKey]; }
-  else {
-    const v=+raw; if(!Number.isFinite(v) || v<=0){ alert('Enter a valid day TWS in knots'); return; }
-    store.days[dayKey]={tws:+v.toFixed(1), updatedAt:Date.now()};
-  }
-  safeLocalSet(POLAR_TWS_OVERRIDE_KEY, store);
-  updateDayTwsUi(di);
-  syncBottomTwsControls();
-  for(const rd of (event._races||[])){ if(rd) updateRaceTwsUi(rd); }
-  refreshPolarDataForDay(event, di);
-  const active=(event._races||[]).find(r=>r && document.getElementById(`racePanel${r._dayIdx}_${r.raceNum}`)?.offsetParent!==null);
-  if(active) rerenderVisibleRace(active);
-  updatePolarStatusLabel();
-}
-function clearDayTwsOverride(di){ const inp=document.getElementById('dayTwsInputBottom') || document.getElementById(`dayTwsInput${di}`); if(inp) inp.value=''; saveDayTwsOverride(di); }
-function saveRaceTwsOverride(di, raceNum){
-  const event=EVENTS?.[di]; const rd=(event?._races||[]).find(r=>r && r.raceNum===raceNum); if(!rd) return;
-  const inp=document.getElementById('raceTwsInputBottom') || document.getElementById(raceDomId(rd,'twsInput'));
-  const raw=inp ? inp.value.trim() : '';
-  const store=getTwsOverrideStore();
-  const raceKey=raceOverrideKeyFromRd(rd);
-  if(raw===''){ delete store.races[raceKey]; }
-  else {
-    const v=+raw; if(!Number.isFinite(v) || v<=0){ alert('Enter a valid race TWS in knots'); return; }
-    store.races[raceKey]={tws:+v.toFixed(1), updatedAt:Date.now()};
-  }
-  safeLocalSet(POLAR_TWS_OVERRIDE_KEY, store);
-  updateRaceTwsUi(rd);
-  refreshPolarDataForRace(rd);
-  rerenderVisibleRace(rd);
-  updatePolarStatusLabel();
-}
-function clearRaceTwsOverride(di, raceNum){
-  const event=EVENTS?.[di]; const rd=(event?._races||[]).find(r=>r && r.raceNum===raceNum); if(!rd) return;
-  const inp=document.getElementById('raceTwsInputBottom') || document.getElementById(raceDomId(rd,'twsInput')); if(inp) inp.value='';
-  saveRaceTwsOverride(di, raceNum);
-}
-
-function getActiveRaceRd(){
-  const event=EVENTS?.[currentDay]; if(!event) return null;
-  const raceNum=event._activeRaceNum;
-  if(Number.isFinite(raceNum)) return (event._races||[]).find(r=>r && r.raceNum===raceNum) || null;
-  return (event._races||[]).find(r=>r && document.getElementById(`racePanel${r._dayIdx}_${r.raceNum}`)?.offsetParent!==null) || null;
-}
-function saveCurrentDayTwsOverride(){ saveDayTwsOverride(currentDay); }
-function clearCurrentDayTwsOverride(){ clearDayTwsOverride(currentDay); }
-function saveCurrentRaceTwsOverride(){ const rd=getActiveRaceRd(); if(!rd){ alert('Load/select a race first'); return; } saveRaceTwsOverride(currentDay, rd.raceNum); }
-function clearCurrentRaceTwsOverride(){ const rd=getActiveRaceRd(); if(!rd){ alert('Load/select a race first'); return; } clearRaceTwsOverride(currentDay, rd.raceNum); }
-function syncBottomTwsControls(){
-  updateDayTwsUi(currentDay);
-  const rd=getActiveRaceRd();
-  if(rd) updateRaceTwsUi(rd);
-  else {
-    const rs=document.getElementById('raceTwsStateBottom'); if(rs) rs.textContent='Select race to edit override';
-    const ri=document.getElementById('raceTwsInputBottom'); if(ri && document.activeElement!==ri) ri.value='';
-  }
-}
-
-function updatePolarStatusLabel(){
-  const el=document.getElementById('polarStatusLabel');
-  if(!el) return;
-  const active=getActivePolarStore(); const cand=getCandidatePolarStore();
-  if(cand && cand.summary && cand.summary.changedBins>0) el.textContent=`PROPOSED ${cand.summary.changedBins}`;
-  else if(active && active.summary && active.summary.changedBins>0) el.textContent='ACTIVE';
-  else el.textContent='BASE';
-}
-function polarSpeed(twa, tws){
-  const polar = getPolarGrid();
-  let t = Math.round(Math.abs(twa));
-  if(t < BOAT_POLAR_TWA_MIN) t = BOAT_POLAR_TWA_MIN;
-  if(t > BOAT_POLAR_TWA_MAX) t = BOAT_POLAR_TWA_MAX;
-  const twsList = BOAT_POLAR_TWS;
-  if(tws <= twsList[0]) return +(polar[String(twsList[0])][String(t)]||0);
-  if(tws >= twsList[twsList.length-1]) return +(polar[String(twsList[twsList.length-1])][String(t)]||0);
-  let lo=twsList[0], hi=twsList[twsList.length-1];
-  for(let i=0;i<twsList.length-1;i++){ if(tws>=twsList[i]&&tws<=twsList[i+1]){lo=twsList[i];hi=twsList[i+1];break;} }
-  const f=(tws-lo)/(hi-lo);
-  const slo=+(polar[String(lo)][String(t)]||0);
-  const shi=+(polar[String(hi)][String(t)]||0);
-  return slo + f*(shi-slo);
-}
-
-function estimateTWS(observedSOG, reachTWA){
-  let bestTWS=12, bestDiff=999;
-  for(const tws of BOAT_POLAR_TWS){
-    const diff=Math.abs(polarSpeed(reachTWA,tws)-observedSOG);
-    if(diff<bestDiff){bestDiff=diff;bestTWS=tws;}
-  }
-  return bestTWS;
-}
-function quantile(arr, q){ if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const idx=(s.length-1)*q; const lo=Math.floor(idx), hi=Math.ceil(idx); if(lo===hi) return s[lo]; const f=idx-lo; return s[lo]*(1-f)+s[hi]*f; }
-function nearestGrid(v, grid){ let best=grid[0], bd=Infinity; for(const g of grid){ const d=Math.abs(v-g); if(d<bd){bd=d;best=g;} } return best; }
-function polarObsId(rd, sail, ts){ return `${rd.event?.id||'ev'}_${rd.event?._dayIdx||0}_${rd.raceNum}_${sail}_${Math.round(ts/1000)}`; }
-function collectPolarObservationsFromRace(rd){
-  if(!rd || !rd.tracks || rd.WF==null) return;
-  const twsInfo=getEffectiveTwsInfo(rd);
-  if(!Number.isFinite(twsInfo.tws)) return;
-  const manualTws=+twsInfo.tws;
-  const store=getPolarObsStore(); const obs=store.observations || (store.observations={});
-  const raceEnd = rd.nextGunTs ? Math.min(rd.gunTs + 1200000, rd.nextGunTs - 1000) : rd.gunTs + 1200000;
-  for(const sail of rd.BOATS||[]){
-    const t=rd.tracks[sail]; if(!t || t.length<20) continue;
-    for(let i=3;i<t.length-3;i++){
-      const p=t[i], p0=t[i-3], p1=t[i+3];
-      if(p.ts<rd.gunTs+15000 || p.ts>raceEnd-15000) continue;
-      const sog=p.sog*0.539957, sog0=(t[i-1].sog||0)*0.539957, sog1=(t[i+1].sog||0)*0.539957;
-      if(sog<6 || sog>35) continue;
-      const cog=brg(p0.lat,p0.lon,p1.lat,p1.lon);
-      const turn=angDiff(brg(t[i-3].lat,t[i-3].lon,t[i-1].lat,t[i-1].lon), brg(t[i+1].lat,t[i+1].lon,t[i+3].lat,t[i+3].lon));
-      const hdgAgree=angDiff(cog, p.hdg||cog);
-      const acc=Math.abs(sog1-sog0);
-      if(turn>12 || hdgAgree>22 || acc>1.2) continue;
-      const twa=Math.abs(((cog-rd.WF+180+360)%360)-180);
-      if(twa<BOAT_POLAR_TWA_MIN || twa>BOAT_POLAR_TWA_MAX) continue;
-      const tws=manualTws;
-      const conf=(Math.max(0, 1 - turn/18) * Math.max(0, 1 - hdgAgree/30) * Math.max(0, 1 - acc/1.8)) * (twsInfo.source==='race'?1:0.96);
-      if(conf < 0.45) continue;
-      const twsBin=nearestGrid(tws, BOAT_POLAR_TWS), twaBin=Math.round(twa);
-      const id=polarObsId(rd, sail, p.ts);
-      if(obs[id]) continue;
-      obs[id]={id, className:BOAT_CLASS, eventId:rd.event?.id||'', day:rd.event?.label||'', dayIdx:rd.event?._dayIdx||0, raceNum:rd.raceNum, sail, ts:p.ts, twa:twaBin, tws:twsBin, bsp:+sog.toFixed(2), conf:+conf.toFixed(3), wf:+rd.WF.toFixed(1), twsSource:twsInfo.source};
-    }
-  }
-  store.updatedAt=Date.now();
-  safeLocalSet(POLAR_OBS_KEY, store);
-}
-function buildPolarCandidateFromStore(){
-  const store=getPolarObsStore(); const obs=Object.values(store.observations||{});
-  const active=getPolarGrid(); const candidate=clonePolar(active); const changes=[];
-  const byBin={};
-  for(const o of obs){
-    if(o.conf<0.45) continue;
-    const key=`${o.tws}_${o.twa}`;
-    (byBin[key]||(byBin[key]=[])).push(o);
-  }
-  for(const [key, arr] of Object.entries(byBin)){
-    if(arr.length < 12) continue;
-    const [tws,twa]=key.split('_');
-    const oldV=+(active[String(tws)]?.[String(twa)]||0); if(!oldV) continue;
-    const vals=arr.map(o=>o.bsp);
-    const q=quantile(vals, 0.82); if(q==null) continue;
-    const capped=Math.max(oldV*0.97, Math.min(oldV*1.08, q));
-    const newV=+(oldV*0.8 + capped*0.2).toFixed(2);
-    const delta=+(newV-oldV).toFixed(2);
-    if(Math.abs(delta) < 0.08) continue;
-    candidate[String(tws)][String(twa)] = newV;
-    changes.push({tws:+tws,twa:+twa,old:oldV,new:newV,delta,samples:arr.length});
-  }
-  changes.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  const cand={className:BOAT_CLASS, createdAt:Date.now(), source:'proposal', polar:candidate, summary:{observations:obs.length, changedBins:changes.length, topChanges:changes.slice(0,20)}, changes};
-  safeLocalSet(POLAR_CANDIDATE_KEY, cand);
-  updatePolarStatusLabel();
-  return cand;
-}
-
-function showPolarProposal(){
-  const cand=buildPolarCandidateFromStore();
-  const top=(cand.summary.topChanges||[])
-    .slice(0,8)
-    .map(c=>`${c.tws}kt/${c.twa}° ${c.old.toFixed(2)}→${c.new.toFixed(2)} (${c.delta>0?'+':''}${c.delta.toFixed(2)}) [n=${c.samples}]`)
-    .join(String.fromCharCode(10));
-  const msg=`M32 polar proposal built from ${cand.summary.observations} stored observations with manually confirmed TWS.
-Changed bins: ${cand.summary.changedBins}.
-
-Top changes:
-${top || 'No material changes proposed.'}
-
-Approve this proposal as the active polar?`;
-  if(cand.summary.changedBins===0){
-    alert(`M32 polar proposal built from ${cand.summary.observations} stored observations with manually confirmed TWS.
-Changed bins: 0.
-
-No material changes proposed.`);
-    return;
-  }
-  if(confirm(msg)){
-    safeLocalSet(POLAR_ACTIVE_KEY, {approvedAt:Date.now(), source:'approved', polar:cand.polar, summary:cand.summary});
-    updatePolarStatusLabel();
-    showToast(`Polar updated · ${cand.summary.changedBins} bins approved`);
-    try{ location.reload(); }catch(e){}
-  }
-}
-
-
-
-// Race cache: keyed by eventId+raceNum
-const raceCache = {};
-
-// ══════════════════════════════════════════════════════════════════
-//  UTILITIES (math, geo, drawing)
-// ══════════════════════════════════════════════════════════════════
-</script>
-<script id="utils-placeholder">
 // ─── MATH ───
 function hav(a,b,c,d){const dL=(c-a)*D2R,dO=(d-b)*D2R,x=Math.sin(dL/2)**2+Math.cos(a*D2R)*Math.cos(c*D2R)*Math.sin(dO/2)**2;return RE*2*Math.asin(Math.sqrt(x))}
 function brg(a,b,c,d){const dO=(d-b)*D2R,x=Math.sin(dO)*Math.cos(c*D2R),y=Math.cos(a*D2R)*Math.sin(c*D2R)-Math.sin(a*D2R)*Math.cos(c*D2R)*Math.cos(dO);return(Math.atan2(x,y)/D2R+360)%360}
@@ -1419,7 +520,7 @@ function inRange(h, lo, hi){
 
 
 // ─── CANVAS SETUP ───
-function cvs(id,h,w){const c=document.getElementById(id);if(!c)return null;const W=w||c.offsetWidth||600;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';if(w)c.style.width=w+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
+function cvs(id,h,w){const c=document.getElementById(id),W=c.offsetWidth;c.width=W*devicePixelRatio;c.height=h*devicePixelRatio;c.style.height=h+'px';const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);return{ctx,W,H:h}}
 function cbg(ctx,W,H){ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H)}
 function nmark(ctx,W,H){const x=W-30,y=22;ctx.save();for(let a=0;a<360;a+=45){const r=a*D2R;ctx.strokeStyle='rgba(0,204,255,.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(r)*12,y-Math.cos(r)*12);ctx.stroke()}ctx.fillStyle='rgba(0,204,255,.4)';ctx.font='7px Orbitron';ctx.textAlign='center';ctx.fillText('N',x,y-16);ctx.restore()}
 
@@ -1522,23 +623,15 @@ function drawCat(ctx,cx,cy,hdgDeg,color,label,mpp,rankBadge,bowOffset=true){
   ctx.fillStyle = color;
   ctx.fill();
 
-  ctx.restore();
+  // Sail number — sit slightly aft of mast
+  const fontSize = Math.max(6, Math.min(11, L * 0.40));
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${fontSize}px Orbitron`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx - fx*L*0.08, cy - fy*L*0.08);
 
-  // Sail number — small, behind the stern so the hull stays clear
-  if(label){
-    const fontSize = Math.max(4, Math.min(6, L * 0.30));  // half size
-    const hr = hdgDeg * D2R;
-    const fx2 = Math.sin(hr), fy2 = -Math.cos(hr);
-    // stern = opposite of bow direction, pushed L*1.5 behind centre
-    const lx = cx - fx2 * (L * 1.5), ly = cy - fy2 * (L * 1.5);
-    ctx.save();
-    ctx.font = `${fontSize}px Orbitron`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = color + 'aa';
-    ctx.fillText(label, lx, ly);
-    ctx.restore();
-  }
+  ctx.restore();
 }
 
 function drawSL(ctx,rx,ry,px,py,dim){
@@ -1605,7 +698,7 @@ function mppForProj(tX,tY,lat1,lon1,lat2,lon2){
 // DRAW: (window.GUN||0) CANVAS
 // ──────────────────────────────────────────────
 function drawGun(mpp_ref){
-  const _cvs_=cvs('cGun',900);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs('cGun',900);cbg(ctx,W,H);
   const{tX,tY,rcR,pnR,p2}=rotProj(GUND,W,H,64,38);
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
   // Start line bearing label
@@ -1680,7 +773,7 @@ function drawGun(mpp_ref){
 }
 
 function drawT50(rm){
-  const _cvs_=cvs('cT50',600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs('cT50',600);cbg(ctx,W,H);
   const{tX,tY,rcR,pnR,p2}=rotProj(T50,W,H,64,38);
   const rx=tX(rcR.rx),ry=tY(rcR.ry),px=tX(pnR.rx),py=tY(pnR.ry);
   drawSL(ctx,rx,ry,px,py,true);
@@ -1731,7 +824,7 @@ function drawCourse(tracks, rm, wf, markPos){
   // Course axis = 317.7° (LW→WW). Rotate by -42.3° so axis is vertical (WW at top).
   // Canvas sized to true aspect ratio of key marks: ~440px wide × 1000px tall.
   const CANVAS_W=440, CANVAS_H=1000;
-  const _cvs_=cvs('cCourse',CANVAS_H);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs('cCourse',CANVAS_H);cbg(ctx,W,H);
 
   const _axis = brg(LWGATE.lat,LWGATE.lon,WWGATE.lat,WWGATE.lon); // LW→WW bearing
   const THETA = (90 - _axis) * (Math.PI/180); // rotate so course axis points up
@@ -1895,7 +988,7 @@ function drawWind(tracks,wind,canvasId){
     cEl.style.display='block';
     cEl.style.margin='10px auto 12px auto';
   }
-  const _cvs_=cvs(canvasId||'cWind', cEl?.offsetWidth||340);if(!_cvs_)return;const {ctx,W,H}=_cvs_; cbg(ctx,W,H);
+  const {ctx,W,H}=cvs(canvasId||'cWind', cEl?.offsetWidth||340); cbg(ctx,W,H);
   const wind_wf=wind&&wind.wf!=null?wind.wf:315;
   const samples=(wind?.race?.samples)||wind?.samples||{uwPort:[],uwStbd:[],dwPort:[],dwStbd:[]};
   const totalSamples = (samples.uwPort?.length||0) + (samples.uwStbd?.length||0) + (samples.dwPort?.length||0) + (samples.dwStbd?.length||0);
@@ -2008,7 +1101,7 @@ function drawWind(tracks,wind,canvasId){
 // ──────────────────────────────────────────────
 function drawDelta(l1,fin,canvasId){
   if(!document.getElementById(canvasId||'cDelta'))return;
-  const _cvs_=cvs(canvasId||'cDelta',290);if(!_cvs_)return;const {ctx,W,H}=_cvs_;ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H);
+  const{ctx,W,H}=cvs(canvasId||'cDelta',290);ctx.fillStyle='#07111f';ctx.fillRect(0,0,W,H);
   const x1=90,x2=W-90,rH=(H-44)/8;
   ctx.save();ctx.fillStyle='rgba(0,204,255,.45)';ctx.font='9px Share Tech Mono';ctx.textAlign='center';ctx.fillText('UPWIND ORDER',x1,16);ctx.fillText('FINISH',x2,16);ctx.restore();
   l1.forEach((sail,i)=>{const fi=fin.indexOf(sail),y1=28+i*rH+rH/2,y2=28+fi*rH+rH/2,d=i-fi;
@@ -2118,8 +1211,10 @@ function renderPL(l1O,fO){
 const MARK1_TS_FALLBACK={'63':1770397596800,'70':1770397626400,'61':1770397641000,'65':1770397689000,'44':1770397701500,'71':1770397713600,'69':1770397809400,'60':1770397820800};
 let rmTS={};
 
-</script>
-<script>
+
+// ══════════════════════════════════════════════════════════════════
+//  API + RENDER + UI
+// ══════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════
 //  API
 // ══════════════════════════════════════════════════════════════════
@@ -3021,7 +2116,12 @@ function renderRacePanel(panelEl, rd){
       </div>`;
     })()}
 
-
+    <!-- Start maps — PAGE 1 end -->
+    <div class="sh">MAP VIEWS</div>
+    <div class="map2">
+      <div class="mc"><div class="mh">AT GUN · RC &amp; Pin ends · boat positions</div><canvas id="${cGunId}"></canvas></div>
+      <div class="mc"><div class="mh">T + 0:50 — tracks + positions · avg speed · ranked</div><canvas id="${cT50Id}"></canvas></div>
+    </div>
     <div class="replayStartGrid">
       <div class="mc replayPortraitCard" style="margin-bottom:8px">
         <div class="mh" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
@@ -3247,7 +2347,7 @@ function lineHeatColor(norm){
   return 'rgba(255,60,60,0.96)';
 }
 function reachRankColor(rd, sail){
-  if(sail === 'TUR3150') return '#ff4444';
+  if(sail === FOCAL_SAIL) return '#ff4444';
   return '#22c55e';
 }
 function isVisibleAtGunReplay(rd, sail){
@@ -3261,7 +2361,7 @@ function visibleGunBoats(rd){
 }
 
 function gunMapBoatColor(rd, sail){
-  if(sail === 'TUR3150') return '#ff4444';
+  if(sail === FOCAL_SAIL) return '#ff4444';
   return '#22c55e';
 }
 
@@ -3269,7 +2369,7 @@ function drawGunR(rd){
   const {raceNum,RC,PIN,gunTs,ocsFromTelemetry} = rd;
   const GUND = visibleGunBoats(rd);
   // Match the T+50 panel height so both cards line up, while fitting the start line tightly again.
-  const _cvs_=cvs(raceDomId(rd,'cGun'),600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs(raceDomId(rd,'cGun'),600);cbg(ctx,W,H);
   if(!GUND.length) return;
 
   const cLa=MID.lat,cLo=MID.lon;
@@ -3442,12 +2542,11 @@ function drawGunR(rd){
     ctx.lineTo(ex-Math.sin(hr+0.4)*6,ey+Math.cos(hr+0.4)*6);
     ctx.closePath();ctx.fill();ctx.restore();
     drawCat(ctx,bx,by,screenHdg,boatCol,d.sail,mpp,null);
-    // speed label — small, behind stern
-    {const hr2=screenHdg*D2R;const sx2=Math.sin(hr2),sy2=-Math.cos(hr2);
-    const sL=Math.max(2.0,5.4/mpp);
-    ctx.save();ctx.font=`5px Share Tech Mono`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle=boatCol+'99';
-    ctx.fillText(`${d.sog.toFixed(1)}`,bx-sx2*sL*1.5,by-sy2*sL*1.5);ctx.restore();}
+    ctx.save();
+    ctx.fillStyle=boatCol;
+    ctx.font='bold 8px Share Tech Mono';
+    ctx.textAlign='left';
+    ctx.fillText(`${d.sog.toFixed(1)} kts`, bx+14, by+3);
     ctx.restore();
   });
   // Speed legend top-left
@@ -3524,30 +2623,19 @@ function startReplayLayout(rd,W,H){
   const g=rd._replayGeom || (rd._replayGeom=buildStartReplayGeom(rd));
   if(!g) return null;
   const {rcR,pnR,lineLen,sampleXs,sampleYs}=g;
-  const {tracks,gunTs}=rd;
   const topPad=36, bottomPad=36, leftPad=56, rightPad=56;
   const cxOff=(rcR.rx+pnR.rx)/2, cyOff=(rcR.ry+pnR.ry)/2;
-
-  // Build bounding box from all track points in the replay window + marks
-  let minX=rcR.rx-cxOff, maxX=rcR.rx-cxOff;
-  let minY=rcR.ry-cyOff, maxY=rcR.ry-cyOff;
-  const _expand=(rx,ry)=>{ if(rx<minX)minX=rx; if(rx>maxX)maxX=rx; if(ry<minY)minY=ry; if(ry>maxY)maxY=ry; };
-  _expand(pnR.rx-cxOff, pnR.ry-cyOff);
-  for(const t of Object.values(tracks||{})){
-    for(const p of t){
-      if(p.ts>=gunTs-95000 && p.ts<=gunTs+32000) _expand(p.rx-cxOff, p.ry-cyOff);
-    }
-  }
-  const fleetW=Math.max(maxX-minX, lineLen, 1);
-  const fleetH=Math.max(maxY-minY, lineLen, 1);
-  const scaleH=(H-topPad-bottomPad)/fleetH;
-  const scaleW=(W-leftPad-rightPad)/fleetW;
-  let scale=Math.min(scaleH,scaleW)*0.88;
-
-  const trajCx=(minX+maxX)/2;
-  const trajCy=(minY+maxY)/2;
-  const tX=rx=>W/2+(rx-cxOff-trajCx)*scale;
-  const tY=ry=>H/2-(ry-cyOff-trajCy)*scale;
+  const {ySpan,widthSpan}=g;
+  // Fit the FULL fleet: scale to whichever axis is the binding constraint
+  const scaleH=(H-topPad-bottomPad)/Math.max(ySpan,lineLen,1);
+  const scaleW=(W-leftPad-rightPad)/Math.max(widthSpan,lineLen,1);
+  let scale=Math.min(scaleH,scaleW)*0.92;  // 8% margin
+  const scaledMinX2=Math.min(...sampleXs.map(v=>(v-cxOff)*scale));
+  const scaledMaxX2=Math.max(...sampleXs.map(v=>(v-cxOff)*scale));
+  const plotCX=(leftPad + (-scaledMinX2) + (W-rightPad - (scaledMaxX2-scaledMinX2))/2);
+  const plotCY=H/2;
+  const tX=rx=>plotCX+(rx-cxOff)*scale;
+  const tY=ry=>plotCY-(ry-cyOff)*scale;
   const rx=tX(rcR.rx), ry=tY(rcR.ry), px=tX(pnR.rx), py=tY(pnR.ry);
   const slPx=Math.hypot(rx-px, ry-py);
   const mpp=hav(rd.RC.lat,rd.RC.lon,rd.PIN.lat,rd.PIN.lon)/Math.max(slPx,1);
@@ -3555,7 +2643,7 @@ function startReplayLayout(rd,W,H){
 }
 
 function drawStartReplayFrame(rd, relSec){
-  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetW=Math.max(600, replayWEl?.offsetWidth||800); const targetH=Math.round(targetW*6/16); const _cvs_=cvs(raceDomId(rd,'cReplay'),targetH,targetW);if(!_cvs_)return;const {ctx,W,H}=_cvs_; cbg(ctx,W,H);
+  const replayWEl=document.getElementById(raceDomId(rd,'cReplay')); const targetW=Math.max(600, replayWEl?.offsetWidth||800); const targetH=Math.round(targetW*6/16); const {ctx,W,H}=cvs(raceDomId(rd,'cReplay'),targetH,targetW); cbg(ctx,W,H);
   const lay=startReplayLayout(rd,W,H); if(!lay) return;
   const {tX,tY,rx,ry,px,py,mpp,rot}=lay;
   const {toM,r}=rd._replayGeom;
@@ -3648,7 +2736,7 @@ function initStartReplayR(rd){
 
 function drawT50R(rd){
   const {raceNum,T50,RC,PIN,rm,tracks,gunTs} = rd;
-  const _cvs_=cvs(raceDomId(rd,'cT50'),600);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs(raceDomId(rd,'cT50'),600);cbg(ctx,W,H);
 
   // Zoom 1.5x: compute natural fit, then scale up 1.5× around canvas centre
   // Use same rotProj but then boost the scale
@@ -3709,12 +2797,9 @@ function drawT50R(rd){
     const screenHdgT50 = d.hdg - rotDegT50;
     const _t50c=reachRankColor(rd,d.sail);
     drawCat(ctx,bx,by,screenHdgT50,_t50c,d.sail,mpp,null);
-    // T+50 speed label — small, behind stern
-    {const hr2=screenHdgT50*D2R;const sx2=Math.sin(hr2),sy2=-Math.cos(hr2);
-    const sL=Math.max(2.0,5.4/mpp);
-    ctx.save();ctx.font='5px Share Tech Mono';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle=_t50c+'99';
-    ctx.fillText(d.avg.toFixed(1),bx-sx2*sL*1.5,by-sy2*sL*1.5);ctx.restore();}
+    ctx.save();ctx.fillStyle=_t50c+'95';ctx.font='8px Share Tech Mono';ctx.textAlign='center';
+    ctx.fillText(d.avg.toFixed(1)+' kts',bx,by+22);
+    ctx.fillStyle=_t50c+'70';ctx.fillText(Math.round(d.dist)+'m',bx,by-24);ctx.restore();
   });
   if(rm){
     const rmM=toM(rm.lat,rm.lon),rmR=r(rmM.x,rmM.y);
@@ -3765,7 +2850,7 @@ function drawCourseR(rd){
   const CANVAS_H = Math.max(280, Math.min(500, Math.round(CANVAS_W * (rawSpanY/Math.max(rawSpanX,1)) + 80)));
   const mnX=Math.min(...rk.map(p=>p[0]))-50,mxX=Math.max(...rk.map(p=>p[0]))+50;
   const mnY=Math.min(...rk.map(p=>p[1]))-50,mxY=Math.max(...rk.map(p=>p[1]))+50;
-  const _cvs_=cvs(raceDomId(rd,'cCourse'),CANVAS_H);if(!_cvs_)return;const {ctx,W,H}=_cvs_;cbg(ctx,W,H);
+  const{ctx,W,H}=cvs(raceDomId(rd,'cCourse'),CANVAS_H);cbg(ctx,W,H);
   const pad=44;
   const scale=Math.min((W-pad*2)/(mxX-mnX),(H-pad*2)/(mxY-mnY));
   const offX=pad+(W-pad*2-(mxX-mnX)*scale)/2;
@@ -3986,7 +3071,7 @@ function renderStartR(rd){
     tr.dataset.fin    = String(fin ?? 9999);
     tr.dataset.ocs    = isOCS ? '1' : '0';
     if(isOCS) tr.style.cssText = 'background:rgba(255,51,85,.12);border-left:3px solid #ff3355';
-    else if(s.sail === 'TUR3150') tr.style.cssText = 'background:rgba(255,68,68,.15);border-left:4px solid #ff4444;outline:1px solid rgba(255,68,68,.3)';
+    else if(s.sail === FOCAL_SAIL) tr.style.cssText = 'background:rgba(255,68,68,.15);border-left:4px solid #ff4444;outline:1px solid rgba(255,68,68,.3)';
 
     tr.innerHTML = `
       <td><div class="td"><span class="rk ${rk}">#${i+1}</span></div></td>
@@ -4640,7 +3725,7 @@ function buildUI(){
   const dayPanelsEl= document.getElementById('dayPanels');
 
   document.getElementById('hdrDays').textContent = `${EVENTS.length} day${EVENTS.length>1?'s':''}`;
-  document.getElementById('hdrFleet').textContent = 'J70';
+  document.getElementById('hdrFleet').textContent = (typeof FLEET_LABEL !== 'undefined' ? FLEET_LABEL : 'J70');
   document.getElementById('regattatitle').textContent = REGATTA_TITLE;
   document.getElementById('regattasub').textContent = REGATTA_SUBTITLE;
   document.title = REGATTA_SUBTITLE + ' · Race Report';
@@ -4784,15 +3869,12 @@ function buildRaceTabs(event, di, guns){
   };
   rtRow.appendChild(st);
 
-  // Race tabs — label by scored race number; abandoned races flagged
-  // RACE_LABELS maps telemetry raceNum → display label
-  const RACE_LABELS = (typeof window.RACE_LABEL_MAP !== 'undefined') ? window.RACE_LABEL_MAP : {};
+  // Race tabs
   guns.forEach(([raceNum], ri)=>{
     const rt = document.createElement('div');
     rt.className = 'race-tab';
     rt.id = `raceTab${di}_${raceNum}`;
-    rt.textContent = RACE_LABELS[raceNum] || `R${raceNum}`;
-    if(RACE_LABELS[raceNum] && RACE_LABELS[raceNum].includes('ABD')) rt.style.opacity='0.7';
+    rt.textContent = `R${raceNum}`;
     rt.dataset.race = raceNum;
     rt.onclick = ()=>selectRace(event, di, raceNum, guns, ri);
     rtRow.appendChild(rt);
@@ -5023,17 +4105,3 @@ async function init(){
 }
 
 // Inject utilities from race3 report then init
-(async()=>{
-  // The utility functions are already defined above via the included script
-  // Just call init
-  init();
-})();
-</script>
-</body>
-</html>
-    <!-- Start maps — PAGE 1 end -->
-    <div class="sh">MAP VIEWS</div>
-    <div class="map2">
-      <div class="mc"><div class="mh">AT GUN · RC &amp; Pin ends · boat positions</div><canvas id="${cGunId}"></canvas></div>
-      <div class="mc"><div class="mh">T + 0:50 — tracks + positions · avg speed · ranked</div><canvas id="${cT50Id}"></canvas></div>
-    </div>
